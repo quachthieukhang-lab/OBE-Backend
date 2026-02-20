@@ -1,69 +1,101 @@
-# OBE Backend - Outcome-Based Education System
-# Framework: NestJS (Node.js)
+<p align="center">   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a> </p>
+# OBE-Backend
 
-================================================================
-DESCRIPTION
-================================================================
-Dự án Backend cho hệ thống Quản lý Giáo dục dựa trên chuẩn đầu ra (OBE).
-Xây dựng trên nền tảng NestJS, hỗ trợ TypeScript, đảm bảo tính hiệu quả 
-và khả năng mở rộng cao cho các ứng dụng server-side.
+## 📌 Description
+OBE-Backend is a NestJS-based backend system designed to support Outcome-Based Education (OBE) management.  
+The system handles mapping between PLO, CLO, CO, assessments, and student scores, providing structured data management and scalable API architecture.
 
-================================================================
-PROJECT SETUP
-================================================================
-Yêu cầu: Node.js (v16+) và npm/yarn.
+Built with:
+- NestJS
+- TypeScript
+- PostgreSQL
+- RESTful API architecture
 
-$ npm install
+---
 
-================================================================
-COMPILE AND RUN
-================================================================
-# Chế độ phát triển (Development)
-$ npm run start
+## 🚀 Project Setup
 
-# Chế độ quan sát (Watch mode)
-$ npm run start:dev
+Install dependencies:
 
-# Chế độ Production
-$ npm run start:prod
+npm install
 
-================================================================
-RUN TESTS
-================================================================
-# Unit tests
-$ npm run test
+---
 
-# e2e tests
-$ npm run test:e2e
+## ▶️ Run the Project
 
-# Test coverage
-$ npm run test:cov
+Development mode:
+npm run start:dev
 
-================================================================
-DEPLOYMENT
-================================================================
-Khi sẵn sàng triển khai lên môi trường Production:
+Production mode:
+npm run start:prod
 
-1. Build dự án: $ npm run build
-2. Triển khai nhanh lên AWS (Sử dụng Mau):
-   $ npm install -g @nestjs/mau
-   $ mau deploy
+Build project:
+npm run build
 
-Chi tiết xem tại: https://docs.nestjs.com/deployment
+---
 
-================================================================
-RESOURCES & SUPPORT
-================================================================
-- Tài liệu NestJS: https://docs.nestjs.com
-- Khóa học video: https://courses.nestjs.com/
-- Devtools: https://devtools.nestjs.com
-- Hỗ trợ Enterprise: https://enterprise.nestjs.com
+## 🧪 Testing
 
-================================================================
-LICENSE & AUTHOR
-================================================================
-- Author: [Tên của bạn/Team]
-- Framework Author: Kamil Myśliwiec
-- License: MIT
-- Website: https://nestjs.com
-================================================================
+Run unit tests:
+npm run test
+
+Run e2e tests:
+npm run test:e2e
+
+Generate coverage report:
+npm run test:cov
+
+---
+
+## 🗄️ Database Setup (PostgreSQL)
+
+Make sure PostgreSQL is running locally.
+
+Example connection string:
+postgresql://postgres:password@localhost:5432/obe_db
+
+You can configure environment variables inside:
+.env
+
+---
+
+## 📂 Project Structure
+
+src/
+ ├── modules/
+ ├── common/
+ ├── config/
+ ├── database/
+ └── main.ts
+
+---
+
+## 🌐 Deployment
+
+To deploy in production:
+
+1. Build the project:
+   npm run build
+
+2. Run compiled version:
+   node dist/main.js
+
+Make sure environment variables are properly configured in production.
+
+---
+
+## 📖 Useful Resources
+
+- NestJS Documentation: https://docs.nestjs.com
+- PostgreSQL Documentation: https://www.postgresql.org/docs/
+- TypeScript Documentation: https://www.typescriptlang.org/docs/
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License.
+
+---
+
+© 2026 OBE Backend Project
