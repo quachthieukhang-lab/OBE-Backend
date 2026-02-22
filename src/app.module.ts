@@ -5,6 +5,7 @@ import { redisStore } from "cache-manager-ioredis-yet";
 import { validateEnv } from "./config/env.validation";
 import { PrismaModule } from "./prisma/prisma.module";
 import { AuthModule } from "./modules/auth/auth.module";
+import { DonViModule } from './don-vi/don-vi.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AuthModule } from "./modules/auth/auth.module";
 
     PrismaModule,
     AuthModule,
+    DonViModule,
   ],
 })
 export class AppModule {}

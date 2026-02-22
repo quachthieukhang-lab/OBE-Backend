@@ -16,6 +16,349 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+model DonVi {
+  maDonVi      String   @id @map("ma_don_vi")
+  tenDonVi     String   @map("ten_don_vi")
+  loaiDonVi    String   @map("loai_don_vi")
+  email        String?  @map("email")
+  soDienThoai  String?  @map("so_dien_thoai")
+  diaChi       String?  @map("dia_chi")
+  website      String?  @map("website")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  chuongTrinhDaoTaos ChuongTrinhDaoTao[]
+  hocPhans           HocPhan[]
+  giangViens         GiangVien[]
+  sinhViens          SinhVien[]
+
+  @@map("don_vi")
+}
+
+model NienKhoa {
+  khoa       Int      @id @map("khoa")
+  namBatDau  Int      @map("nam_bat_dau")
+  namKetThuc Int?     @map("nam_ket_thuc")
+  ghiChu     String?  @map("ghi_chu")
+
+  chuongTrinhNienKhoas ChuongTrinhDaoTaoNienKhoa[]
+  lopHocPhans          LopHocPhan[]
+  sinhViens            SinhVien[]
+
+  @@map("nien_khoa")
+}
+
+model ChuongTrinhDaoTao {
+  maSoNganh      String   @id @default(uuid()) @map("ma_so_nganh")
+  maDonVi        String   @map("ma_don_vi")
+  tenTiengViet   String   @map("ten_tieng_viet")
+  tenTiengAnh    String?  @map("ten_tieng_anh")
+  truongCapBang  String?  @map("truong_cap_bang")
+  tenGoiVanBang  String?  @map("ten_goi_van_bang")
+  trinhDoDaoTao  String   @map("trinh_do_dao_tao")
+  soTinChi       Int      @map("so_tin_chi")
+  hinhThucDaoTao String?  @map("hinh_thuc_dao_tao")
+  thoiGianDaoTao String?  @map("thoi_gian_dao_tao")
+  thangDiemDanhGia String? @map("thang_diem_danh_gia")
+  phienBan       String?  @map("phien_ban")
+  ngayBanHanh    DateTime? @map("ngay_ban_hanh") @db.Date
+  ngayApDung     DateTime? @map("ngay_ap_dung") @db.Date
+  moTa           String?  @map("mo_ta")
+  trangThai      String   @default("active") @map("trang_thai")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  donVi          DonVi    @relation(fields: [maDonVi], references: [maDonVi])
+
+  chuongTrinhNienKhoas ChuongTrinhDaoTaoNienKhoa[]
+  chuongTrinhHocPhans   ChuongTrinhDaoTaoHocPhan[]
+  plos                 PLO[]
+  sinhViens             SinhVien[]
+  banPhanCongs          BanPhanCongNhapDeCuongChiTietHP[]
+
+  @@map("chuong_trinh_dao_tao")
+}
+
+model ChuongTrinhDaoTaoNienKhoa {
+  maSoNganh  String @map("ma_so_nganh")
+  khoa       Int    @map("khoa")
+  ngayApDung DateTime? @map("ngay_ap_dung") @db.Date
+  ghiChu     String? @map("ghi_chu")
+  status     String? @map("status")
+
+  chuongTrinh ChuongTrinhDaoTao @relation(fields: [maSoNganh], references: [maSoNganh])
+  nienKhoa     NienKhoa         @relation(fields: [khoa], references: [khoa])
+
+  @@id([maSoNganh, khoa])
+  @@map("chuong_trinh_dao_tao_nien_khoa")
+}
+
+model HocPhan {
+  maHocPhan      String  @id @map("ma_hoc_phan")
+  maDonVi        String  @map("ma_don_vi")
+  tenHocPhan     String  @map("ten_hoc_phan")
+  soTinChi       Int     @map("so_tin_chi")
+  loaiHocPhan    String? @map("loai_hoc_phan")
+  moTa           String? @map("mo_ta")
+  soTietLyThuyet Int?    @map("so_tiet_ly_thuyet")
+  soTietThucHanh Int?    @map("so_tiet_thuc_hanh")
+  ngonNguGiangDay String? @map("ngon_ngu_giang_day")
+  taiLieuThamKhao String? @map("tai_lieu_tham_khao")
+
+  donVi DonVi @relation(fields: [maDonVi], references: [maDonVi])
+
+  chuongTrinhHocPhans ChuongTrinhDaoTaoHocPhan[]
+  clos                CLO[]
+  cos                 CO[]
+  cachDanhGias         CachDanhGia[]
+  lopHocPhans          LopHocPhan[]
+  banPhanCongs         BanPhanCongNhapDeCuongChiTietHP[]
+
+  @@map("hoc_phan")
+}
+
+model ChuongTrinhDaoTaoHocPhan {
+  maSoNganh    String @map("ma_so_nganh")
+  maHocPhan    String @map("ma_hoc_phan")
+  hocKyDuKien  Int?   @map("hoc_ky_du_kien")
+  namHocDuKien Int?   @map("nam_hoc_du_kien")
+  batBuoc      Boolean @default(true) @map("bat_buoc")
+  nhomTuChon   String? @map("nhom_tu_chon")
+  ghiChu       String? @map("ghi_chu")
+
+  chuongTrinh ChuongTrinhDaoTao @relation(fields: [maSoNganh], references: [maSoNganh])
+  hocPhan     HocPhan           @relation(fields: [maHocPhan], references: [maHocPhan])
+
+  @@id([maSoNganh, maHocPhan])
+  @@map("chuong_trinh_dao_tao_hoc_phan")
+}
+
+model PLO {
+  maPLO            String  @id @default(uuid()) @map("ma_plo")
+  maSoNganh        String  @map("ma_so_nganh")
+  noiDungChuanDauRa String @map("noi_dung_chuan_dau_ra")
+  code             String? @map("code")
+  nhom             String? @map("nhom")
+  mucDo            String? @map("muc_do")
+  ghiChu           String? @map("ghi_chu")
+  isActive         Boolean @default(true) @map("is_active")
+
+  chuongTrinh ChuongTrinhDaoTao @relation(fields: [maSoNganh], references: [maSoNganh])
+  cloPloMappings CloPloMapping[]
+
+  @@map("plo")
+}
+
+model CLO {
+  maCLO             String @id @default(uuid()) @map("ma_clo")
+  maHocPhan         String @map("ma_hoc_phan")
+  noiDungChuanDauRa String @map("noi_dung_chuan_dau_ra")
+  code              String? @map("code")
+
+  hocPhan HocPhan @relation(fields: [maHocPhan], references: [maHocPhan])
+
+  cloPloMappings CloPloMapping[]
+  cloCoMappings  CloCoMapping[]
+
+  @@map("clo")
+}
+
+model CO {
+  maCO              String @id @default(uuid()) @map("ma_co")
+  maHocPhan         String @map("ma_hoc_phan")
+  noiDungChuanDauRa String @map("noi_dung_chuan_dau_ra")
+  code              String? @map("code")
+
+  hocPhan HocPhan @relation(fields: [maHocPhan], references: [maHocPhan])
+
+  cloCoMappings  CloCoMapping[]
+  cdgCoMappings  CdgCoMapping[]
+
+  @@map("co")
+}
+
+model CachDanhGia {
+  maCDG        String  @id @default(uuid()) @map("ma_cdg")
+  maHocPhan    String  @map("ma_hoc_phan")
+  cachDanhGia  String? @map("cach_danh_gia")
+  trongSo      Decimal @map("trong_so") @db.Decimal(5, 4)
+  tenThanhPhan String  @map("ten_thanh_phan")
+  loai         String? @map("loai")
+
+  hocPhan HocPhan @relation(fields: [maHocPhan], references: [maHocPhan])
+
+  cdgCoMappings CdgCoMapping[]
+  diemSos       DiemSo[]
+
+  @@map("cach_danh_gia")
+}
+
+model CloPloMapping {
+  maPLO   String @map("ma_plo")
+  maCLO   String @map("ma_clo")
+  trongSo Decimal @map("trong_so") @db.Decimal(5, 4)
+  ghiChu  String? @map("ghi_chu")
+
+  plo PLO @relation(fields: [maPLO], references: [maPLO])
+  clo CLO @relation(fields: [maCLO], references: [maCLO])
+
+  @@id([maPLO, maCLO])
+  @@map("clo_plo_mapping")
+}
+
+model CloCoMapping {
+  maCLO   String @map("ma_clo")
+  maCO    String @map("ma_co")
+  trongSo Decimal @map("trong_so") @db.Decimal(5, 4)
+  ghiChu  String? @map("ghi_chu")
+
+  clo CLO @relation(fields: [maCLO], references: [maCLO])
+  co  CO  @relation(fields: [maCO], references: [maCO])
+
+  @@id([maCLO, maCO])
+  @@map("clo_co_mapping")
+}
+
+model CdgCoMapping {
+  maCDG   String @map("ma_cdg")
+  maCO    String @map("ma_co")
+  trongSo Decimal @map("trong_so") @db.Decimal(5, 4)
+  ghiChu  String? @map("ghi_chu")
+
+  cdg CachDanhGia @relation(fields: [maCDG], references: [maCDG])
+  co  CO          @relation(fields: [maCO], references: [maCO])
+
+  @@id([maCDG, maCO])
+  @@map("cdg_co_mapping")
+}
+
+model GiangVien {
+  MSGV        String  @id @map("msgv")
+  maDonVi     String  @map("ma_don_vi")
+  hoTen       String  @map("ho_ten")
+  email       String? @map("email")
+  soDienThoai String? @map("so_dien_thoai")
+  hocVi       String? @map("hoc_vi")
+  chucDanh    String? @map("chuc_danh")
+  boMon       String? @map("bo_mon")
+  ngaySinh    DateTime? @map("ngay_sinh") @db.Date
+  isActive    Boolean @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  donVi DonVi @relation(fields: [maDonVi], references: [maDonVi])
+
+  lopHocPhans  LopHocPhan[]
+  banPhanCongs BanPhanCongNhapDeCuongChiTietHP[]
+  diemSos     DiemSo[]
+
+  @@map("giang_vien")
+}
+
+model LopHocPhan {
+  maLopHocPhan String @id @map("ma_lop_hoc_phan")
+  MSGV         String @map("msgv")
+  maHocPhan    String @map("ma_hoc_phan")
+  khoa         Int    @map("khoa")
+  hocKy        Int    @map("hoc_ky")
+  nhom         String? @map("nhom")
+  siSoToiDa    Int?    @map("si_so_toi_da")
+  phongHoc     String? @map("phong_hoc")
+  lichHoc      String? @map("lich_hoc")
+  ngayBatDau   DateTime? @map("ngay_bat_dau") @db.Date
+  ngayKetThuc  DateTime? @map("ngay_ket_thuc") @db.Date
+  status       String? @map("status")
+
+  giangVien GiangVien @relation(fields: [MSGV], references: [MSGV])
+  hocPhan   HocPhan   @relation(fields: [maHocPhan], references: [maHocPhan])
+  nienKhoa  NienKhoa  @relation(fields: [khoa], references: [khoa])
+
+  dangKyHocPhans DangKyHocPhan[]
+  diemSos        DiemSo[]
+
+  @@map("lop_hoc_phan")
+}
+
+model SinhVien {
+  MSSV           String @id @map("mssv")
+  maDonVi        String? @map("ma_don_vi")
+  khoa           Int?    @map("khoa")
+  maSoNganh      String? @map("ma_so_nganh")
+  hoTen          String  @map("ho_ten")
+  ngaySinh       DateTime? @map("ngay_sinh") @db.Date
+  gioiTinh       String? @map("gioi_tinh")
+  email          String? @map("email")
+  soDienThoai    String? @map("so_dien_thoai")
+  trangThaiHocTap String? @map("trang_thai_hoc_tap")
+
+  donVi   DonVi?            @relation(fields: [maDonVi], references: [maDonVi])
+  nienKhoa NienKhoa?        @relation(fields: [khoa], references: [khoa])
+  chuongTrinh ChuongTrinhDaoTao? @relation(fields: [maSoNganh], references: [maSoNganh])
+
+  dangKyHocPhans DangKyHocPhan[]
+  diemSos        DiemSo[]
+
+  @@map("sinh_vien")
+}
+
+model DangKyHocPhan {
+  maDangKy      String @id @default(uuid()) @map("ma_dang_ky")
+  maLopHocPhan  String @map("ma_lop_hoc_phan")
+  MSSV          String @map("mssv")
+  ngayDangKy    DateTime? @map("ngay_dang_ky") @db.Date
+  trangThai     String? @map("trang_thai")
+  lanHoc        Int?    @map("lan_hoc")
+  ghiChu        String? @map("ghi_chu")
+
+  lopHocPhan LopHocPhan @relation(fields: [maLopHocPhan], references: [maLopHocPhan])
+  sinhVien   SinhVien   @relation(fields: [MSSV], references: [MSSV])
+
+  diemSos DiemSo[]
+
+  @@unique([maLopHocPhan, MSSV, lanHoc])
+  @@map("dang_ky_hoc_phan")
+}
+
+model DiemSo {
+  id           String  @id @default(uuid()) @map("id")
+  MSSV         String  @map("mssv")
+  maCDG        String  @map("ma_cdg")
+  maLopHocPhan String  @map("ma_lop_hoc_phan")
+  maDangKy     String  @map("ma_dang_ky")
+  diem         Decimal @map("diem") @db.Decimal(5, 2)
+  lanNhap      Int?    @default(1) @map("lan_nhap")
+  MSGV    String? @map("msgv")
+
+  sinhVien   SinhVien   @relation(fields: [MSSV], references: [MSSV])
+  cachDanhGia CachDanhGia @relation(fields: [maCDG], references: [maCDG])
+  lopHocPhan  LopHocPhan @relation(fields: [maLopHocPhan], references: [maLopHocPhan])
+  dangKyHocPhan DangKyHocPhan @relation(fields: [maDangKy], references: [maDangKy])
+
+  giangVien GiangVien? @relation(fields: [MSGV], references: [MSGV])
+
+  @@unique([maDangKy, maCDG])
+  @@map("diem_so")
+}
+
+model BanPhanCongNhapDeCuongChiTietHP {
+  maBanPhanCong String @id @default(uuid()) @map("ma_ban_phan_cong")
+  maSoNganh     String @map("ma_so_nganh")
+  maHocPhan     String @map("ma_hoc_phan")
+  MSGV          String @map("msgv")
+  vaiTro        String @map("vai_tro")
+  trangThai     String @map("trang_thai")
+  deadline      DateTime? @map("deadline") @db.Date
+  ghiChu        String? @map("ghi_chu")
+  assignedAt    DateTime? @map("assigned_at")
+
+  chuongTrinh ChuongTrinhDaoTao @relation(fields: [maSoNganh], references: [maSoNganh])
+  hocPhan     HocPhan           @relation(fields: [maHocPhan], references: [maHocPhan])
+  giangVien   GiangVien         @relation(fields: [MSGV], references: [MSGV])
+
+  @@map("ban_phan_cong_nhap_de_cuong_chi_tiet_hp")
+}
+
 enum Role {
   ADMIN
   QA
