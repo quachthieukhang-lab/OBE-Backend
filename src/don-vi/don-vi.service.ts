@@ -8,7 +8,7 @@ export class DonViService {
   constructor(private prisma: PrismaService) {}
   async create(dto: CreateDonViDto) {
     try {
-      return await this.prisma.DonVi.create({ data: dto });
+      return await this.prisma.donVi.create({ data: dto });
     }
     catch(e: any){
       if (e?.code === "P2002") throw new ConflictException("maDonVi đã tồn tại");
@@ -17,22 +17,22 @@ export class DonViService {
   }
 
   findAll() {
-    return this.prisma.DonVi.findMany({ orderBy: { createdAt: "desc" } });
+    return this.prisma.donVi.findMany({ orderBy: { createdAt: "desc" } });
   }
 
   async findOne(maDonVi: string) {
-    const item = await this.prisma.DonVi.findUnique({ where: { maDonVi } });
+    const item = await this.prisma.donVi.findUnique({ where: { maDonVi } });
     if (!item) throw new NotFoundException("Không tìm thấy đơn vị");
     return item;
   }
 
   async update(maDonVi: string, dto: UpdateDonViDto) {
     await this.findOne(maDonVi);
-    return this.prisma.DonVi.update({ where: { maDonVi }, data: dto });
+    return this.prisma.donVi.update({ where: { maDonVi }, data: dto });
   }
 
   async remove(maDonVi: string) {
     await this.findOne(maDonVi);
-    return this.prisma.DonVi.delete({ where: { maDonVi } });
+    return this.prisma.donVi.delete({ where: { maDonVi } });
   }
 }

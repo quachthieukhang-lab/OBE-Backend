@@ -1,11 +1,18 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from "@nestjs/common";
+import { AuthGuard } from "@nestjs/passport";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { DonViService } from "./don-vi.service";
 import { CreateDonViDto } from "./dto/create-don-vi.dto";
 import { UpdateDonViDto } from "./dto/update-don-vi.dto";
+import { RolesGuard } from "src/modules/auth/guards/roles.guard";
+import { Roles } from "src/modules/auth/roles.decorator";
+import { Role } from "src/modules/auth/role.enum";
+
 
 @ApiTags("don-vi")
-@ApiBearerAuth() // nếu bạn muốn bảo vệ bằng JWT
+@ApiBearerAuth()
+// @UseGuards(AuthGuard('jwt'), RolesGuard)
+// @Roles(Role.ADMIN, Role.LECTURER)
 @Controller("don-vi")
 export class DonViController {
   constructor(private readonly service: DonViService) {}

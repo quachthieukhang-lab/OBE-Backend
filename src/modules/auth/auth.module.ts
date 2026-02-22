@@ -3,16 +3,19 @@ import { JwtModule } from "@nestjs/jwt";
 import { PassportModule } from "@nestjs/passport";
 import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
-import { JwtStrategy } from "./jwt.strategy";
-
-const expiresIn = Number(process.env.JWT_EXPIRES_IN ?? 60 * 60 * 24 * 7);
+import { JwtStrategy } from "./strategies/jwt.strategy";
+import { ConfigService } from "@nestjs/config";
 
 @Module({
   imports: [
     PassportModule,
-    JwtModule.register({
-      secret: process.env.JWT_SECRET!,
-      signOptions: { expiresIn }, // ✅ dùng biến number
+    JwtModule.registerAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>("JWT_SECRET"),
+        signOptions: { expiresIn: config.get<any>("JWT_EXPIRES_IN") ?? "7d" },
+        
+      }),
     }),
   ],
   providers: [AuthService, JwtStrategy],
