@@ -6,6 +6,7 @@ import { validateEnv } from "./config/env.validation";
 import { PrismaModule } from "./prisma/prisma.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { DonViModule } from './don-vi/don-vi.module';
+import { NienKhoaModule } from './nien-khoa/nien-khoa.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { DonViModule } from './don-vi/don-vi.module';
     PrismaModule,
     AuthModule,
     DonViModule,
+    NienKhoaModule,
   ],
 })
 export class AppModule {}
