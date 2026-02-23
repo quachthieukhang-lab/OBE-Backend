@@ -7,6 +7,7 @@ import { PrismaModule } from "./prisma/prisma.module";
 import { AuthModule } from "./modules/auth/auth.module";
 import { DonViModule } from './don-vi/don-vi.module';
 import { NienKhoaModule } from './nien-khoa/nien-khoa.module';
+import { ChuongTrinhDaoTaoModule } from './chuong-trinh-dao-tao/chuong-trinh-dao-tao.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { NienKhoaModule } from './nien-khoa/nien-khoa.module';
     AuthModule,
     DonViModule,
     NienKhoaModule,
+    ChuongTrinhDaoTaoModule,
   ],
 })
 export class AppModule {}
