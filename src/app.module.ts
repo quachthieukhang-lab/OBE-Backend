@@ -13,6 +13,7 @@ import { ChuongTrinhDaoTaoNienKhoaModule } from './chuong-trinh-dao-tao-nien-kho
 import { GiangVienModule } from './giang-vien/giang-vien.module';
 import { ChuongTrinhDaoTaoHocPhanModule } from './chuong-trinh-dao-tao-hoc-phan/chuong-trinh-dao-tao-hoc-phan.module';
 import { BanPhanCongNhapDeCuongChiTietHpModule } from './ban-phan-cong-nhap-de-cuong-chi-tiet-hp/ban-phan-cong-nhap-de-cuong-chi-tiet-hp.module';
+import { PloModule } from './plo/plo.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { BanPhanCongNhapDeCuongChiTietHpModule } from './ban-phan-cong-nhap-de-c
     GiangVienModule,
     ChuongTrinhDaoTaoHocPhanModule,
     BanPhanCongNhapDeCuongChiTietHpModule,
+    PloModule,
   ],
 })
 export class AppModule {}
