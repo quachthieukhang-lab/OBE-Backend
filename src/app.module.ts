@@ -8,6 +8,11 @@ import { AuthModule } from "./modules/auth/auth.module";
 import { DonViModule } from './don-vi/don-vi.module';
 import { NienKhoaModule } from './nien-khoa/nien-khoa.module';
 import { ChuongTrinhDaoTaoModule } from './chuong-trinh-dao-tao/chuong-trinh-dao-tao.module';
+import { HocPhanModule } from './hoc-phan/hoc-phan.module';
+import { ChuongTrinhDaoTaoNienKhoaModule } from './chuong-trinh-dao-tao-nien-khoa/chuong-trinh-dao-tao-nien-khoa.module';
+import { GiangVienModule } from './giang-vien/giang-vien.module';
+import { ChuongTrinhDaoTaoHocPhanModule } from './chuong-trinh-dao-tao-hoc-phan/chuong-trinh-dao-tao-hoc-phan.module';
+import { BanPhanCongNhapDeCuongChiTietHpModule } from './ban-phan-cong-nhap-de-cuong-chi-tiet-hp/ban-phan-cong-nhap-de-cuong-chi-tiet-hp.module';
 
 @Module({
   imports: [
@@ -30,6 +35,11 @@ import { ChuongTrinhDaoTaoModule } from './chuong-trinh-dao-tao/chuong-trinh-dao
     DonViModule,
     NienKhoaModule,
     ChuongTrinhDaoTaoModule,
+    HocPhanModule,
+    ChuongTrinhDaoTaoNienKhoaModule,
+    GiangVienModule,
+    ChuongTrinhDaoTaoHocPhanModule,
+    BanPhanCongNhapDeCuongChiTietHpModule,
   ],
 })
 export class AppModule {}

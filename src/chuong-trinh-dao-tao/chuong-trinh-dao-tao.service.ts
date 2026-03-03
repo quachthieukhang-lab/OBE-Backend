@@ -32,10 +32,10 @@ export class ChuongTrinhDaoTaoService {
       // Prisma error handling: check .code để trả lỗi rõ :contentReference[oaicite:2]{index=2}
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === "P2002") {
-          throw new BadRequestException("maSoNganh already exists");
+          throw new BadRequestException("maSoNganh đã tồn tại");
         }
         if (e.code === "P2003") {
-          throw new BadRequestException("Foreign key invalid (maDonVi)");
+          throw new BadRequestException("Khóa ngoại maDonVi không hợp lệ ");
         }
       }
       throw e;
@@ -63,16 +63,14 @@ export class ChuongTrinhDaoTaoService {
       },
     });
 
-    if (!item) throw new NotFoundException("ChuongTrinhDaoTao not found");
+    if (!item) throw new NotFoundException("ChuongTrinhDaoTao không tồn tại!");
     return item;
   }
 
   async update(maSoNganh: string, dto: UpdateChuongTrinhDaoTaoDto) {
-    await this.findOne(maSoNganh);
     const { maDonVi, ...rest } = dto;
-
+    await this.findOne(maSoNganh);
     if (maDonVi) await this.assertDonViExists(maDonVi);
-
     return this.prisma.chuongTrinhDaoTao.update({
       where: { maSoNganh },
       data: {

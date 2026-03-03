@@ -234,6 +234,7 @@ model GiangVien {
   MSGV        String    @id @map("msgv")
   maDonVi     String    @map("ma_don_vi")
   hoTen       String    @map("ho_ten")
+  gioiTinh    String?   @map("gioi_tinh")
   email       String?   @map("email")
   soDienThoai String?   @map("so_dien_thoai")
   hocVi       String?   @map("hoc_vi")
