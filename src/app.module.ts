@@ -14,6 +14,10 @@ import { GiangVienModule } from './giang-vien/giang-vien.module';
 import { ChuongTrinhDaoTaoHocPhanModule } from './chuong-trinh-dao-tao-hoc-phan/chuong-trinh-dao-tao-hoc-phan.module';
 import { BanPhanCongNhapDeCuongChiTietHpModule } from './ban-phan-cong-nhap-de-cuong-chi-tiet-hp/ban-phan-cong-nhap-de-cuong-chi-tiet-hp.module';
 import { PloModule } from './plo/plo.module';
+import { SinhVienModule } from './sinh-vien/sinh-vien.module';
+import { LopHocPhanModule } from './lop-hoc-phan/lop-hoc-phan.module';
+import { DangKyHocPhanModule } from './dang-ky-hoc-phan/dang-ky-hoc-phan.module';
+import { CachDanhGiaModule } from './cach-danh-gia/cach-danh-gia.module';
 
 @Module({
   imports: [
@@ -42,6 +46,10 @@ import { PloModule } from './plo/plo.module';
     ChuongTrinhDaoTaoHocPhanModule,
     BanPhanCongNhapDeCuongChiTietHpModule,
     PloModule,
+    SinhVienModule,
+    LopHocPhanModule,
+    DangKyHocPhanModule,
+    CachDanhGiaModule,
   ],
 })
 export class AppModule {}

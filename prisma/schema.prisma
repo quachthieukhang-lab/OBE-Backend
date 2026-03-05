@@ -234,7 +234,7 @@ model GiangVien {
   MSGV        String    @id @map("msgv")
   maDonVi     String    @map("ma_don_vi")
   hoTen       String    @map("ho_ten")
-  gioiTinh    String?   @map("gioi_tinh")
+  gioiTinh    Gender?   @default(Nam) @map("gioi_tinh") 
   email       String?   @map("email")
   soDienThoai String?   @map("so_dien_thoai")
   hocVi       String?   @map("hoc_vi")
@@ -285,7 +285,7 @@ model SinhVien {
   maSoNganh       String?   @map("ma_so_nganh")
   hoTen           String    @map("ho_ten")
   ngaySinh        DateTime? @map("ngay_sinh") @db.Date
-  gioiTinh        String?   @map("gioi_tinh")
+  gioiTinh        Gender?   @default(Nam) @map("gioi_tinh")
   email           String?   @map("email")
   soDienThoai     String?   @map("so_dien_thoai")
   trangThaiHocTap String?   @map("trang_thai_hoc_tap")
@@ -362,4 +362,9 @@ enum Role {
   QA
   LECTURER
   AUDITOR
+}
+
+enum Gender {
+  Nam
+  Nữ
 }
