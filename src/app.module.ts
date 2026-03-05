@@ -18,6 +18,12 @@ import { SinhVienModule } from './sinh-vien/sinh-vien.module';
 import { LopHocPhanModule } from './lop-hoc-phan/lop-hoc-phan.module';
 import { DangKyHocPhanModule } from './dang-ky-hoc-phan/dang-ky-hoc-phan.module';
 import { CachDanhGiaModule } from './cach-danh-gia/cach-danh-gia.module';
+import { CloModule } from './clo/clo.module';
+import { CloPloMappingModule } from './clo-plo-mapping/clo-plo-mapping.module';
+import { CoModule } from './co/co.module';
+import { DiemSoModule } from './diem-so/diem-so.module';
+import { CloCoMappingModule } from './clo-co-mapping/clo-co-mapping.module';
+import { CdgCoMappingModule } from './cdg-co-mapping/cdg-co-mapping.module';
 
 @Module({
   imports: [
@@ -50,6 +56,12 @@ import { CachDanhGiaModule } from './cach-danh-gia/cach-danh-gia.module';
     LopHocPhanModule,
     DangKyHocPhanModule,
     CachDanhGiaModule,
+    CloModule,
+    CloPloMappingModule,
+    CoModule,
+    DiemSoModule,
+    CloCoMappingModule,
+    CdgCoMappingModule,
   ],
 })
 export class AppModule {}

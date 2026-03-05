@@ -234,7 +234,7 @@ model GiangVien {
   MSGV        String    @id @map("msgv")
   maDonVi     String    @map("ma_don_vi")
   hoTen       String    @map("ho_ten")
-  gioiTinh    Gender?   @default(Nam) @map("gioi_tinh") 
+  gioiTinh    Gender?   @default(Nam) @map("gioi_tinh")
   email       String?   @map("email")
   soDienThoai String?   @map("so_dien_thoai")
   hocVi       String?   @map("hoc_vi")
@@ -325,15 +325,16 @@ model DiemSo {
   maLopHocPhan String  @map("ma_lop_hoc_phan")
   maDangKy     String  @map("ma_dang_ky")
   diem         Decimal @map("diem") @db.Decimal(5, 2)
-  lanNhap      Int?    @default(1) @map("lan_nhap")
   MSGV         String? @map("msgv")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   sinhVien      SinhVien      @relation(fields: [MSSV], references: [MSSV])
   cachDanhGia   CachDanhGia   @relation(fields: [maCDG], references: [maCDG])
   lopHocPhan    LopHocPhan    @relation(fields: [maLopHocPhan], references: [maLopHocPhan])
   dangKyHocPhan DangKyHocPhan @relation(fields: [maDangKy], references: [maDangKy])
-
-  giangVien GiangVien? @relation(fields: [MSGV], references: [MSGV])
+  giangVien     GiangVien?    @relation(fields: [MSGV], references: [MSGV])
 
   @@unique([maDangKy, maCDG])
   @@map("diem_so")
