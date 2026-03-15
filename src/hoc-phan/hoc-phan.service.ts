@@ -8,6 +8,14 @@ import { UpdateHocPhanDto } from "./dto/update-hoc-phan.dto";
 export class HocPhanService {
   constructor(private readonly prisma: PrismaService) { }
 
+  private async assertHocPhanExists(maHocPhan: string) {
+    const hp = await this.prisma.hocPhan.findUnique({
+      where: { maHocPhan },
+      select: { maHocPhan: true },
+    });
+    if (!hp) throw new NotFoundException("HocPhan not found");
+  }
+  
   private async assertDonViExists(maDonVi: string) {
     const dv = await this.prisma.donVi.findUnique({
       where: { maDonVi },
@@ -78,5 +86,99 @@ export class HocPhanService {
   async remove(maHocPhan: string) {
     await this.findOne(maHocPhan);
     return this.prisma.hocPhan.delete({ where: { maHocPhan } });
+  }
+
+  async getPloOptions(maHocPhan: string) {
+    await this.assertHocPhanExists(maHocPhan);
+
+    // Tìm tất cả CTĐT có chứa học phần này
+    const programLinks = await this.prisma.chuongTrinhDaoTaoHocPhan.findMany({
+      where: { maHocPhan },
+      select: { maSoNganh: true },
+    });
+
+    const maSoNganhs = [...new Set(programLinks.map((x) => x.maSoNganh))];
+
+    if (maSoNganhs.length === 0) {
+      return [];
+    }
+
+    const plos = await this.prisma.pLO.findMany({
+      where: {
+        maSoNganh: { in: maSoNganhs },
+      },
+      orderBy: [{ code: "asc" }, { maPLO: "asc" }],
+      select: {
+        maPLO: true,
+        maSoNganh: true,
+        code: true,
+        noiDungChuanDauRa: true,
+      },
+    });
+
+    return plos;
+  }
+
+  async getCloPloMappingMatrix(maHocPhan: string) {
+    await this.assertHocPhanExists(maHocPhan);
+
+    const [clos, programLinks] = await Promise.all([
+      this.prisma.cLO.findMany({
+        where: { maHocPhan },
+        orderBy: [{ code: "asc" }, { maCLO: "asc" }],
+        select: {
+          maCLO: true,
+          maHocPhan: true,
+          code: true,
+          noiDungChuanDauRa: true,
+        },
+      }),
+      this.prisma.chuongTrinhDaoTaoHocPhan.findMany({
+        where: { maHocPhan },
+        select: { maSoNganh: true },
+      }),
+    ]);
+
+    const maSoNganhs = [...new Set(programLinks.map((x) => x.maSoNganh))];
+
+    const plos =
+      maSoNganhs.length === 0
+        ? []
+        : await this.prisma.pLO.findMany({
+          where: {
+            maSoNganh: { in: maSoNganhs },
+          },
+          orderBy: [{ code: "asc" }, { maPLO: "asc" }],
+          select: {
+            maPLO: true,
+            maSoNganh: true,
+            code: true,
+            noiDungChuanDauRa: true,
+          },
+        });
+
+    const maCLOs = clos.map((x) => x.maCLO);
+
+    const mappings =
+      maCLOs.length === 0
+        ? []
+        : await this.prisma.cloPloMapping.findMany({
+          where: {
+            maCLO: { in: maCLOs },
+          },
+          orderBy: [{ maCLO: "asc" }, { maPLO: "asc" }],
+          select: {
+            maCLO: true,
+            maPLO: true,
+            trongSo: true,
+            ghiChu: true,
+          },
+        });
+
+    return {
+      clos,
+      plos,
+      mappings,
+    };
   }
 }

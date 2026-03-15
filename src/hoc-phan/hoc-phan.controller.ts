@@ -33,4 +33,14 @@ export class HocPhanController {
   remove(@Param("maHocPhan") maHocPhan: string) {
     return this.service.remove(maHocPhan);
   }
+
+  @Get(":maHocPhan/plo-options")
+  getPloOptions(@Param("maHocPhan") maHocPhan: string) {
+    return this.service.getPloOptions(maHocPhan);
+  }
+
+  @Get(":maHocPhan/clo-plo-mapping")
+  getCloPloMappingMatrix(@Param("maHocPhan") maHocPhan: string) {
+    return this.service.getCloPloMappingMatrix(maHocPhan);
+  }
 }
