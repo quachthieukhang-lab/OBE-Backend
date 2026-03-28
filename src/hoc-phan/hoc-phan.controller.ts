@@ -7,7 +7,7 @@ import { UpdateHocPhanDto } from "./dto/update-hoc-phan.dto";
 @ApiTags("hoc-phan")
 @Controller("hoc-phan")
 export class HocPhanController {
-  constructor(private readonly service: HocPhanService) {}
+  constructor(private readonly service: HocPhanService) { }
 
   @Post()
   create(@Body() dto: CreateHocPhanDto) {
@@ -42,5 +42,15 @@ export class HocPhanController {
   @Get(":maHocPhan/clo-plo-mapping")
   getCloPloMappingMatrix(@Param("maHocPhan") maHocPhan: string) {
     return this.service.getCloPloMappingMatrix(maHocPhan);
+  }
+
+  @Get(":maHocPhan/clo-co-mapping")
+  getCloCoMappingMatrix(@Param("maHocPhan") maHocPhan: string) {
+    return this.service.getCloCoMappingMatrix(maHocPhan);
+  }
+
+  @Get(":maHocPhan/cdg-co-mapping")
+  getCdgCoMappingMatrix(@Param("maHocPhan") maHocPhan: string) {
+    return this.service.getCdgCoMappingMatrix(maHocPhan);
   }
 }

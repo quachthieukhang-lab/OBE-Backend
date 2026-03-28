@@ -325,6 +325,7 @@ model DiemSo {
   maLopHocPhan String  @map("ma_lop_hoc_phan")
   maDangKy     String  @map("ma_dang_ky")
   diem         Decimal @map("diem") @db.Decimal(5, 2)
+  tiLeHoanThanh   Decimal? @map("ti_le_hoan_thanh") @db.Decimal(5, 4)
   MSGV         String? @map("msgv")
 
   createdAt DateTime @default(now()) @map("created_at")
