@@ -143,6 +143,7 @@ model PLO {
 
   chuongTrinh    ChuongTrinhDaoTao @relation(fields: [maSoNganh], references: [maSoNganh])
   cloPloMappings CloPloMapping[]
+  ketQuaPLOs     KetQuaPLO[]
 
   @@map("plo")
 }
@@ -157,6 +158,7 @@ model CLO {
 
   cloPloMappings CloPloMapping[]
   cloCoMappings  CloCoMapping[]
+  ketQuaCLOs     KetQuaCLO[]
 
   @@map("clo")
 }
@@ -171,6 +173,7 @@ model CO {
 
   cloCoMappings CloCoMapping[]
   cdgCoMappings CdgCoMapping[]
+  ketQuaCOs     KetQuaCO[]
 
   @@map("co")
 }
@@ -274,6 +277,8 @@ model LopHocPhan {
 
   dangKyHocPhans DangKyHocPhan[]
   diemSos        DiemSo[]
+  ketQuaCOs      KetQuaCO[]
+  ketQuaCLOs     KetQuaCLO[]
 
   @@map("lop_hoc_phan")
 }
@@ -296,6 +301,9 @@ model SinhVien {
 
   dangKyHocPhans DangKyHocPhan[]
   diemSos        DiemSo[]
+  ketQuaCOs      KetQuaCO[]
+  ketQuaCLOs     KetQuaCLO[]
+  ketQuaPLOs     KetQuaPLO[]
 
   @@map("sinh_vien")
 }
@@ -319,14 +327,14 @@ model DangKyHocPhan {
 }
 
 model DiemSo {
-  id           String  @id @default(uuid()) @map("id")
-  MSSV         String  @map("mssv")
-  maCDG        String  @map("ma_cdg")
-  maLopHocPhan String  @map("ma_lop_hoc_phan")
-  maDangKy     String  @map("ma_dang_ky")
-  diem         Decimal @map("diem") @db.Decimal(5, 2)
-  tiLeHoanThanh   Decimal? @map("ti_le_hoan_thanh") @db.Decimal(5, 4)
-  MSGV         String? @map("msgv")
+  id            String   @id @default(uuid()) @map("id")
+  MSSV          String   @map("mssv")
+  maCDG         String   @map("ma_cdg")
+  maLopHocPhan  String   @map("ma_lop_hoc_phan")
+  maDangKy      String   @map("ma_dang_ky")
+  diem          Decimal  @map("diem") @db.Decimal(5, 2)
+  tiLeHoanThanh Decimal? @map("ti_le_hoan_thanh") @db.Decimal(5, 4)
+  MSGV          String?  @map("msgv")
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -357,6 +365,55 @@ model BanPhanCongNhapDeCuongChiTietHP {
   giangVien   GiangVien         @relation(fields: [MSGV], references: [MSGV])
 
   @@map("ban_phan_cong_nhap_de_cuong_chi_tiet_hp")
+}
+
+model KetQuaCO {
+  id           String   @id @default(uuid()) @map("id")
+  MSSV         String   @map("mssv")
+  maCO         String   @map("ma_co")
+  maLopHocPhan String   @map("ma_lop_hoc_phan")
+  tiLeDat      Decimal  @map("ti_le_dat") @db.Decimal(5, 4)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  sinhVien   SinhVien   @relation(fields: [MSSV], references: [MSSV])
+  co         CO         @relation(fields: [maCO], references: [maCO])
+  lopHocPhan LopHocPhan @relation(fields: [maLopHocPhan], references: [maLopHocPhan])
+
+  @@unique([MSSV, maCO, maLopHocPhan])
+  @@map("ket_qua_co")
+}
+
+model KetQuaCLO {
+  id           String   @id @default(uuid()) @map("id")
+  MSSV         String   @map("mssv")
+  maCLO        String   @map("ma_clo")
+  maLopHocPhan String   @map("ma_lop_hoc_phan")
+  tiLeDat      Decimal  @map("ti_le_dat") @db.Decimal(5, 4)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  sinhVien   SinhVien   @relation(fields: [MSSV], references: [MSSV])
+  clo        CLO        @relation(fields: [maCLO], references: [maCLO])
+  lopHocPhan LopHocPhan @relation(fields: [maLopHocPhan], references: [maLopHocPhan])
+
+  @@unique([MSSV, maCLO, maLopHocPhan])
+  @@map("ket_qua_clo")
+}
+
+model KetQuaPLO {
+  id        String   @id @default(uuid()) @map("id")
+  MSSV      String   @map("mssv")
+  maPLO     String   @map("ma_plo")
+  tiLeDat   Decimal  @map("ti_le_dat") @db.Decimal(5, 4)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  sinhVien SinhVien @relation(fields: [MSSV], references: [MSSV])
+  plo      PLO      @relation(fields: [maPLO], references: [maPLO])
+
+  @@unique([MSSV, maPLO])
+  @@map("ket_qua_plo")
 }
 
 enum Role {

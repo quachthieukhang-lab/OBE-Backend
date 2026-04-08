@@ -25,6 +25,7 @@ import { DiemSoModule } from './diem-so/diem-so.module';
 import { CloCoMappingModule } from './clo-co-mapping/clo-co-mapping.module';
 import { CdgCoMappingModule } from './cdg-co-mapping/cdg-co-mapping.module';
 import { DashboardAdminModule } from './dashboard-admin/dashboard-admin.module';
+import { ObeCalculationModule } from './obe-calculation/obe-calculation.module';
 
 @Module({
   imports: [
@@ -64,6 +65,7 @@ import { DashboardAdminModule } from './dashboard-admin/dashboard-admin.module';
     CloCoMappingModule,
     CdgCoMappingModule,
     DashboardAdminModule,
+    ObeCalculationModule,
   ],
 })
 export class AppModule {}

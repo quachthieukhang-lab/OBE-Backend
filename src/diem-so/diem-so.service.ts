@@ -3,10 +3,10 @@ import { Prisma } from "@prisma/client";
 import { PrismaService } from "src/prisma/prisma.service";
 import { CreateDiemSoDto } from "./dto/create-diem-so.dto";
 import { UpdateDiemSoDto } from "./dto/update-diem-so.dto";
-
+import { ObeCalculationService } from "../obe-calculation/obe-calculation.service";
 @Injectable()
 export class DiemSoService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService, private readonly obeCalculationService: ObeCalculationService) {}
 
   private calculateTiLeHoanThanh(
     diem: Prisma.Decimal,
@@ -115,7 +115,7 @@ export class DiemSoService {
     const tiLeHoanThanh = this.calculateTiLeHoanThanh(diemDecimal, trongSoDecimal);
 
     try {
-      return await this.prisma.diemSo.create({
+      const created = await this.prisma.diemSo.create({
         data: {
           maDangKy: dk.maDangKy,
           MSSV: dk.MSSV,
@@ -133,6 +133,8 @@ export class DiemSoService {
           dangKyHocPhan: true,
         },
       });
+      await this.obeCalculationService.recalculateObeResultsForEnrollment(maDangKy);
+      return created;
     } catch (e: any) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === "P2002") {
@@ -166,7 +168,7 @@ export class DiemSoService {
       );
     }
 
-    return this.prisma.diemSo.update({
+    const updated = await this.prisma.diemSo.update({
       where: { id: current.id },
       data: {
         ...(dto.diem != null
@@ -185,6 +187,8 @@ export class DiemSoService {
         dangKyHocPhan: true,
       },
     });
+    await this.obeCalculationService.recalculateObeResultsForEnrollment(maDangKy);
+    return updated;
   }
 
   async remove(maDangKy: string, maCDG: string) {
