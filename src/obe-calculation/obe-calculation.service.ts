@@ -375,14 +375,7 @@ export class ObeCalculationService {
     }
   }
 
-  /**
-   * 3) CLO -> PLO
-   * KetQuaPLO là kết quả tích lũy cuối của sinh viên
-   *
-   * Cải tiến:
-   * - học lại: dùng MAX / LATEST / AVERAGE (mặc định MAX)
-   * - có thể nhân thêm tín chỉ ở tầng PLO
-   */
+
   private async recalculatePLO(
     tx: Prisma.TransactionClient,
     input: {
@@ -441,9 +434,19 @@ export class ObeCalculationService {
     for (const plo of plos) {
       const relatedMappings = mappings.filter((m) => m.maPLO === plo.maPLO);
 
+      // 🛑 THÊM CỜ KIỂM TRA: Xem sinh viên đã tích lũy bất kỳ CLO nào thuộc PLO này chưa
+      let hasAttemptedAnyCLO = false;
+
       const weightedItems = relatedMappings.map((mapping) => {
         const mappingWeight = this.toDecimal(mapping.trongSo);
-        const cloCompletion = cloAggregatedMap.get(mapping.maCLO) ?? this.zero();
+        
+        let cloCompletion = this.zero();
+        
+        // 🛑 SỬA LOGIC Ở ĐÂY: Nếu Map chứa CLO này, tức là sinh viên đã học và có điểm
+        if (cloAggregatedMap.has(mapping.maCLO)) {
+          cloCompletion = cloAggregatedMap.get(mapping.maCLO) ?? this.zero();
+          hasAttemptedAnyCLO = true; // Bật cờ đánh dấu đã có dữ liệu
+        }
 
         const tinChi = this.toDecimal(mapping.clo.hocPhan.soTinChi ?? 0);
         const effectiveWeight = this.includeCreditsInPlo
@@ -455,6 +458,11 @@ export class ObeCalculationService {
           weight: effectiveWeight,
         };
       });
+
+      // 🛑 ĐIỂM CHỐT CHẶN: Nếu chưa học bất kỳ môn nào có map với PLO này -> Bỏ qua, không tính, không lưu!
+      if (!hasAttemptedAnyCLO) {
+        continue;
+      }
 
       const tiLeDat = this.calculateWeightedAverage(weightedItems);
 

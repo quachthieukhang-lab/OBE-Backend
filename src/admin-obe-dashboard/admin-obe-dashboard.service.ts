@@ -3,7 +3,7 @@ import { PrismaService } from "src/prisma/prisma.service";
 
 @Injectable()
 export class AdminObeDashboardService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async getOverview(params: {
     maDonVi?: string;
@@ -38,6 +38,7 @@ export class AdminObeDashboardService {
       this.getPloRadar({
         maDonVi,
         khoa: cauHinh.khoa,
+        nguongDatCaNhan: Number(cauHinh.nguongDatCaNhan),
       }),
       this.getBottleneckCourses({
         maDonVi,
@@ -71,8 +72,9 @@ export class AdminObeDashboardService {
   private async getPloRadar(params: {
     maDonVi: string;
     khoa: number;
+    nguongDatCaNhan: number;
   }) {
-    const { maDonVi, khoa } = params;
+    const { maDonVi, khoa, nguongDatCaNhan } = params;
 
     const rows = await this.prisma.ketQuaPLO.findMany({
       where: {
@@ -101,18 +103,29 @@ export class AdminObeDashboardService {
         label: string;
         noiDung: string;
         values: number[];
+        passed: number;
+        total: number;
       }
     >();
 
     for (const row of rows) {
+      const score = Number(row.tiLeDat);
+
       const current = grouped.get(row.maPLO) ?? {
         maPLO: row.maPLO,
         label: row.plo.code ?? row.maPLO,
         noiDung: row.plo.noiDungChuanDauRa,
         values: [],
+        passed: 0,
+        total: 0,
       };
 
-      current.values.push(Number(row.tiLeDat));
+      current.values.push(score);
+      current.total += 1;
+      if (score >= nguongDatCaNhan) {
+        current.passed += 1;
+      }
+
       grouped.set(row.maPLO, current);
     }
 
@@ -123,12 +136,15 @@ export class AdminObeDashboardService {
             ? item.values.reduce((a, b) => a + b, 0) / item.values.length
             : 0;
 
+        const passRate = item.total > 0 ? item.passed / item.total : 0;
+
         return {
           maPLO: item.maPLO,
           label: item.label,
           noiDung: item.noiDung,
           avgTiLeDat: Number(avg.toFixed(4)),
           avgDiemHe10: Number((avg * 10).toFixed(2)),
+          passRate: Number(passRate.toFixed(4)),
         };
       })
       .sort((a, b) => a.label.localeCompare(b.label));
@@ -150,10 +166,10 @@ export class AdminObeDashboardService {
         },
         ...(hocKy !== undefined
           ? {
-              lopHocPhan: {
-                hocKy,
-              },
-            }
+            lopHocPhan: {
+              hocKy,
+            },
+          }
           : {}),
       },
       select: {
