@@ -15,9 +15,9 @@ export class CauHinhObeController {
   }
 
   @Get()
-  findAll(@Query("namHoc") namHoc?: string) {
-    if (namHoc) {
-      return this.service.findByNamHoc(namHoc);
+  findAll(@Query("khoa") khoa?: string) {
+    if (khoa) {
+      return this.service.findByKhoa(Number(khoa));
     }
     return this.service.findAll();
   }

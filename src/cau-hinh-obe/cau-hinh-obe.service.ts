@@ -8,19 +8,38 @@ import { UpdateCauHinhObeDto } from "./dto/update-cau-hinh-obe.dto";
 export class CauHinhObeService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private async assertNienKhoaExists(khoa: number) {
+    const item = await this.prisma.nienKhoa.findUnique({
+      where: { khoa },
+      select: { khoa: true },
+    });
+
+    if (!item) {
+      throw new BadRequestException("NienKhoa not found");
+    }
+  }
+
   async create(dto: CreateCauHinhObeDto) {
+    await this.assertNienKhoaExists(dto.khoa);
+
     try {
       return await this.prisma.cauHinhOBE.create({
         data: {
-          namHoc: dto.namHoc,
+          khoa: dto.khoa,
           nguongDatCaNhan: new Prisma.Decimal(dto.nguongDatCaNhan),
           kpiLopHoc: new Prisma.Decimal(dto.kpiLopHoc),
+        },
+        include: {
+          nienKhoa: true,
         },
       });
     } catch (e: any) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === "P2002") {
-          throw new BadRequestException("CauHinhOBE already exists");
+          throw new BadRequestException("CauHinhOBE for this khoa already exists");
+        }
+        if (e.code === "P2003") {
+          throw new BadRequestException("Foreign key constraint failed");
         }
       }
       throw e;
@@ -29,8 +48,9 @@ export class CauHinhObeService {
 
   async findAll() {
     return this.prisma.cauHinhOBE.findMany({
-      orderBy: {
-        createdAt: "desc",
+      orderBy: { createdAt: "desc" },
+      include: {
+        nienKhoa: true,
       },
     });
   }
@@ -38,6 +58,9 @@ export class CauHinhObeService {
   async findOne(id: string) {
     const item = await this.prisma.cauHinhOBE.findUnique({
       where: { id },
+      include: {
+        nienKhoa: true,
+      },
     });
 
     if (!item) {
@@ -50,18 +73,37 @@ export class CauHinhObeService {
   async update(id: string, dto: UpdateCauHinhObeDto) {
     await this.findOne(id);
 
-    return this.prisma.cauHinhOBE.update({
-      where: { id },
-      data: {
-        ...(dto.namHoc !== undefined ? { namHoc: dto.namHoc } : {}),
-        ...(dto.nguongDatCaNhan !== undefined
-          ? { nguongDatCaNhan: new Prisma.Decimal(dto.nguongDatCaNhan) }
-          : {}),
-        ...(dto.kpiLopHoc !== undefined
-          ? { kpiLopHoc: new Prisma.Decimal(dto.kpiLopHoc) }
-          : {}),
-      },
-    });
+    if (dto.khoa !== undefined) {
+      await this.assertNienKhoaExists(dto.khoa);
+    }
+
+    try {
+      return await this.prisma.cauHinhOBE.update({
+        where: { id },
+        data: {
+          ...(dto.khoa !== undefined ? { khoa: dto.khoa } : {}),
+          ...(dto.nguongDatCaNhan !== undefined
+            ? { nguongDatCaNhan: new Prisma.Decimal(dto.nguongDatCaNhan) }
+            : {}),
+          ...(dto.kpiLopHoc !== undefined
+            ? { kpiLopHoc: new Prisma.Decimal(dto.kpiLopHoc) }
+            : {}),
+        },
+        include: {
+          nienKhoa: true,
+        },
+      });
+    } catch (e: any) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError) {
+        if (e.code === "P2002") {
+          throw new BadRequestException("CauHinhOBE for this khoa already exists");
+        }
+        if (e.code === "P2003") {
+          throw new BadRequestException("Foreign key constraint failed");
+        }
+      }
+      throw e;
+    }
   }
 
   async remove(id: string) {
@@ -72,16 +114,16 @@ export class CauHinhObeService {
     });
   }
 
-  async findByNamHoc(namHoc: string) {
-    const item = await this.prisma.cauHinhOBE.findFirst({
-      where: { namHoc },
-      orderBy: {
-        createdAt: "desc",
+  async findByKhoa(khoa: number) {
+    const item = await this.prisma.cauHinhOBE.findUnique({
+      where: { khoa },
+      include: {
+        nienKhoa: true,
       },
     });
 
     if (!item) {
-      throw new NotFoundException(`CauHinhOBE not found for namHoc=${namHoc}`);
+      throw new NotFoundException(`CauHinhOBE not found for khoa=${khoa}`);
     }
 
     return item;

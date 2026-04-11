@@ -1,8 +1,11 @@
-import { IsString, Matches } from "class-validator";
+import { IsInt, Min, Matches } from "class-validator";
+import { Type } from "class-transformer";
 
 export class CreateCauHinhObeDto {
-  @IsString()
-  namHoc!: string;
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  khoa!: number;
 
   @Matches(/^\d+(\.\d{1,4})?$/, {
     message: "nguongDatCaNhan must be a number with up to 4 decimals",
