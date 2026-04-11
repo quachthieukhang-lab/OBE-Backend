@@ -26,6 +26,9 @@ import { CloCoMappingModule } from './clo-co-mapping/clo-co-mapping.module';
 import { CdgCoMappingModule } from './cdg-co-mapping/cdg-co-mapping.module';
 import { DashboardAdminModule } from './dashboard-admin/dashboard-admin.module';
 import { ObeCalculationModule } from './obe-calculation/obe-calculation.module';
+import { CauHinhObeModule } from './cau-hinh-obe/cau-hinh-obe.module';
+import { UsersModule } from './users/users.module';
+import { LecturerScoresModule } from './lecturer-scores/lecturer-scores.module';
 
 @Module({
   imports: [
@@ -66,6 +69,9 @@ import { ObeCalculationModule } from './obe-calculation/obe-calculation.module';
     CdgCoMappingModule,
     DashboardAdminModule,
     ObeCalculationModule,
+    CauHinhObeModule,
+    UsersModule,
+    LecturerScoresModule,
   ],
 })
 export class AppModule {}

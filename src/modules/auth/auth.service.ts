@@ -8,9 +8,9 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwt: JwtService
-  ) {}
+  ) { }
 
-  async signUp(email: string, password: string) {
+  async signUp(email: string, password: string, hoTen: string) {
     const hash = await bcrypt.hash(password, 10);
     const user = await this.prisma.user.create({
       data: { email, password: hash },
@@ -29,8 +29,17 @@ export class AuthService {
     const accessToken = await this.jwt.signAsync({
       sub: user.id,
       role: user.role,
+      msgv: user.msgv,
     });
 
-    return { accessToken };
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        msgv: user.msgv,
+      },
+    };
   }
 }

@@ -24,8 +24,16 @@ async function bootstrap() {
     .setTitle(process.env.SWAGGER_TITLE ?? "OBE API")
     .setDescription(process.env.SWAGGER_DESC ?? "")
     .setVersion(process.env.SWAGGER_VERSION ?? "1.0")
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+      },
+      'bearer',
+    )
     .build();
+    
 
   const doc = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("docs", app, doc);

@@ -7,5 +7,6 @@ import { ObeCalculationModule } from "../obe-calculation/obe-calculation.module"
   imports: [ObeCalculationModule],
   controllers: [DiemSoController],
   providers: [DiemSoService],
+  exports: [DiemSoService]
 })
 export class DiemSoModule {}

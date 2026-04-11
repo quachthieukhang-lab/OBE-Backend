@@ -198,4 +198,27 @@ export class DiemSoService {
       where: { id: current.id },
     });
   }
+
+  async createForEnrollment(
+    maDangKy: string,
+    dto: { maCDG: string; diem: string },
+    MSGV: string,
+  ) {
+    return this.create(maDangKy, {
+      ...dto,
+      MSGV,
+    });
+  }
+  
+  async updateForEnrollment(
+    maDangKy: string,
+    maCDG: string,
+    dto: { diem?: string },
+    MSGV: string,
+  ) {
+    return this.update(maDangKy, maCDG, {
+      ...dto,
+      MSGV,
+    });
+  }
 }

@@ -11,8 +11,13 @@ model User {
   email     String   @unique
   password  String
   role      Role     @default(LECTURER)
+  msgv      String?  @unique @map("msgv")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  giangVien GiangVien? @relation(fields: [msgv], references: [MSGV])
+
+  @@map("user")
 }
 
 model DonVi {
@@ -245,6 +250,7 @@ model GiangVien {
   boMon       String?   @map("bo_mon")
   ngaySinh    DateTime? @map("ngay_sinh") @db.Date
   isActive    Boolean   @default(true) @map("is_active")
+  user        User?
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
@@ -414,6 +420,17 @@ model KetQuaPLO {
 
   @@unique([MSSV, maPLO])
   @@map("ket_qua_plo")
+}
+
+model CauHinhOBE {
+  id              String   @id @default(uuid()) @map("id")
+  namHoc          String   @unique @map("nam_hoc")
+  nguongDatCaNhan Decimal  @map("nguong_dat_ca_nhan") @db.Decimal(5, 4)
+  kpiLopHoc       Decimal  @map("kpi_lop_hoc") @db.Decimal(5, 4)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("cau_hinh_obe")
 }
 
 enum Role {
