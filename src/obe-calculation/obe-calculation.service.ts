@@ -1,12 +1,22 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { PrismaService } from "src/prisma/prisma.service";
 
 type DecimalLike = Prisma.Decimal | number | string;
+type RetakeStrategy = "MAX" | "LATEST" | "AVERAGE";
 
 @Injectable()
 export class ObeCalculationService {
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Có thể đổi sau bằng config DB nếu cần.
+   * Tạm thời:
+   * - MAX: lấy kết quả CLO cao nhất khi sinh viên học lại
+   * - includeCreditsInPlo: có nhân thêm số tín chỉ khi tính PLO hay không
+   */
+  private readonly retakeStrategy: RetakeStrategy = "MAX";
+  private readonly includeCreditsInPlo = true;
 
   private toDecimal(value: DecimalLike) {
     return new Prisma.Decimal(value);
@@ -16,9 +26,19 @@ export class ObeCalculationService {
     return new Prisma.Decimal(0);
   }
 
+  private one() {
+    return new Prisma.Decimal(1);
+  }
+
+  private clamp01(value: Prisma.Decimal) {
+    if (value.lessThan(0)) return this.zero();
+    if (value.greaterThan(1)) return this.one();
+    return value;
+  }
+
   private divideSafe(numerator: Prisma.Decimal, denominator: Prisma.Decimal) {
     if (denominator.equals(0)) return this.zero();
-    return numerator.div(denominator).toDecimalPlaces(4);
+    return this.clamp01(numerator.div(denominator)).toDecimalPlaces(4);
   }
 
   private async getEnrollmentOrThrow(maDangKy: string) {
@@ -32,6 +52,8 @@ export class ObeCalculationService {
           select: {
             maLopHocPhan: true,
             maHocPhan: true,
+            khoa: true,
+            hocKy: true,
           },
         },
       },
@@ -42,6 +64,91 @@ export class ObeCalculationService {
     }
 
     return enrollment;
+  }
+
+  /**
+   * Weighted average chuẩn:
+   * numerator = Σ(value * weight)
+   * denominator = Σ(weight)
+   */
+  private calculateWeightedAverage(
+    items: Array<{ value: Prisma.Decimal; weight: Prisma.Decimal }>,
+  ) {
+    let numerator = this.zero();
+    let denominator = this.zero();
+
+    for (const item of items) {
+      if (item.weight.lessThanOrEqualTo(0)) continue;
+
+      numerator = numerator.plus(item.value.mul(item.weight));
+      denominator = denominator.plus(item.weight);
+    }
+
+    return this.divideSafe(numerator, denominator);
+  }
+
+  /**
+   * Gom nhiều kết quả CLO cùng maCLO khi sinh viên học lại / cải thiện.
+   * Mặc định: lấy MAX.
+   */
+  private aggregateRetakeResults(
+    rows: Array<{
+      maCLO: string;
+      tiLeDat: Prisma.Decimal;
+      updatedAt: Date;
+      createdAt: Date;
+    }>,
+  ) {
+    const grouped = new Map<
+      string,
+      Array<{
+        tiLeDat: Prisma.Decimal;
+        updatedAt: Date;
+        createdAt: Date;
+      }>
+    >();
+
+    for (const row of rows) {
+      const list = grouped.get(row.maCLO) ?? [];
+      list.push({
+        tiLeDat: this.toDecimal(row.tiLeDat),
+        updatedAt: row.updatedAt,
+        createdAt: row.createdAt,
+      });
+      grouped.set(row.maCLO, list);
+    }
+
+    const result = new Map<string, Prisma.Decimal>();
+
+    for (const [maCLO, values] of grouped.entries()) {
+      if (this.retakeStrategy === "MAX") {
+        let best = this.zero();
+        for (const item of values) {
+          if (item.tiLeDat.greaterThan(best)) {
+            best = item.tiLeDat;
+          }
+        }
+        result.set(maCLO, best.toDecimalPlaces(4));
+        continue;
+      }
+
+      if (this.retakeStrategy === "LATEST") {
+        const latest = [...values].sort(
+          (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
+        )[0];
+        result.set(maCLO, latest.tiLeDat.toDecimalPlaces(4));
+        continue;
+      }
+
+      // AVERAGE
+      let sum = this.zero();
+      for (const item of values) {
+        sum = sum.plus(item.tiLeDat);
+      }
+      result.set(maCLO, this.divideSafe(sum, this.toDecimal(values.length)));
+    }
+
+    return result;
   }
 
   /**
@@ -78,6 +185,8 @@ export class ObeCalculationService {
       MSSV,
       maLopHocPhan,
       maHocPhan,
+      retakeStrategy: this.retakeStrategy,
+      includeCreditsInPlo: this.includeCreditsInPlo,
     };
   }
 
@@ -92,7 +201,7 @@ export class ObeCalculationService {
       MSSV: string;
       maLopHocPhan: string;
       maHocPhan: string;
-    }
+    },
   ) {
     const { maDangKy, MSSV, maLopHocPhan, maHocPhan } = input;
 
@@ -125,7 +234,7 @@ export class ObeCalculationService {
     ]);
 
     const scoreMap = new Map(
-      scores.map((s) => [s.maCDG, this.toDecimal(s.tiLeHoanThanh ?? 0)])
+      scores.map((s) => [s.maCDG, this.toDecimal(s.tiLeHoanThanh ?? 0)]),
     );
 
     const results: Array<{
@@ -136,18 +245,13 @@ export class ObeCalculationService {
     for (const co of cos) {
       const relatedMappings = mappings.filter((m) => m.maCO === co.maCO);
 
-      let numerator = this.zero();
-      let denominator = this.zero();
+      const weightedItems = relatedMappings.map((mapping) => ({
+        value: scoreMap.get(mapping.maCDG) ?? this.zero(),
+        weight: this.toDecimal(mapping.trongSo),
+      }));
 
-      for (const mapping of relatedMappings) {
-        const weight = this.toDecimal(mapping.trongSo);
-        const completion = scoreMap.get(mapping.maCDG) ?? this.zero();
+      const tiLeDat = this.calculateWeightedAverage(weightedItems);
 
-        numerator = numerator.plus(completion.mul(weight));
-        denominator = denominator.plus(weight);
-      }
-
-      const tiLeDat = this.divideSafe(numerator, denominator);
       results.push({
         maCO: co.maCO,
         tiLeDat,
@@ -186,7 +290,7 @@ export class ObeCalculationService {
       MSSV: string;
       maLopHocPhan: string;
       maHocPhan: string;
-    }
+    },
   ) {
     const { MSSV, maLopHocPhan, maHocPhan } = input;
 
@@ -225,7 +329,7 @@ export class ObeCalculationService {
     ]);
 
     const coResultMap = new Map(
-      ketQuaCOs.map((x) => [x.maCO, this.toDecimal(x.tiLeDat)])
+      ketQuaCOs.map((x) => [x.maCO, this.toDecimal(x.tiLeDat)]),
     );
 
     const results: Array<{
@@ -236,18 +340,12 @@ export class ObeCalculationService {
     for (const clo of clos) {
       const relatedMappings = mappings.filter((m) => m.maCLO === clo.maCLO);
 
-      let numerator = this.zero();
-      let denominator = this.zero();
+      const weightedItems = relatedMappings.map((mapping) => ({
+        value: coResultMap.get(mapping.maCO) ?? this.zero(),
+        weight: this.toDecimal(mapping.trongSo),
+      }));
 
-      for (const mapping of relatedMappings) {
-        const weight = this.toDecimal(mapping.trongSo);
-        const coCompletion = coResultMap.get(mapping.maCO) ?? this.zero();
-
-        numerator = numerator.plus(coCompletion.mul(weight));
-        denominator = denominator.plus(weight);
-      }
-
-      const tiLeDat = this.divideSafe(numerator, denominator);
+      const tiLeDat = this.calculateWeightedAverage(weightedItems);
 
       results.push({
         maCLO: clo.maCLO,
@@ -280,12 +378,16 @@ export class ObeCalculationService {
   /**
    * 3) CLO -> PLO
    * KetQuaPLO là kết quả tích lũy cuối của sinh viên
+   *
+   * Cải tiến:
+   * - học lại: dùng MAX / LATEST / AVERAGE (mặc định MAX)
+   * - có thể nhân thêm tín chỉ ở tầng PLO
    */
   private async recalculatePLO(
     tx: Prisma.TransactionClient,
     input: {
       MSSV: string;
-    }
+    },
   ) {
     const { MSSV } = input;
 
@@ -295,6 +397,8 @@ export class ObeCalculationService {
         select: {
           maCLO: true,
           tiLeDat: true,
+          createdAt: true,
+          updatedAt: true,
         },
       }),
       tx.cloPloMapping.findMany({
@@ -302,6 +406,15 @@ export class ObeCalculationService {
           maCLO: true,
           maPLO: true,
           trongSo: true,
+          clo: {
+            select: {
+              hocPhan: {
+                select: {
+                  soTinChi: true,
+                },
+              },
+            },
+          },
         },
       }),
       tx.pLO.findMany({
@@ -311,20 +424,14 @@ export class ObeCalculationService {
       }),
     ]);
 
-    const cloResultsGrouped = new Map<string, Prisma.Decimal[]>();
-    for (const item of ketQuaCLOs) {
-      const list = cloResultsGrouped.get(item.maCLO) ?? [];
-      list.push(this.toDecimal(item.tiLeDat));
-      cloResultsGrouped.set(item.maCLO, list);
-    }
-
-    // Nếu 1 CLO xuất hiện nhiều lớp, lấy trung bình các lần đạt
-    const cloAverageMap = new Map<string, Prisma.Decimal>();
-    for (const [maCLO, values] of cloResultsGrouped.entries()) {
-      let sum = this.zero();
-      for (const v of values) sum = sum.plus(v);
-      cloAverageMap.set(maCLO, this.divideSafe(sum, this.toDecimal(values.length)));
-    }
+    const cloAggregatedMap = this.aggregateRetakeResults(
+      ketQuaCLOs.map((item) => ({
+        maCLO: item.maCLO,
+        tiLeDat: this.toDecimal(item.tiLeDat),
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      })),
+    );
 
     const results: Array<{
       maPLO: string;
@@ -334,18 +441,22 @@ export class ObeCalculationService {
     for (const plo of plos) {
       const relatedMappings = mappings.filter((m) => m.maPLO === plo.maPLO);
 
-      let numerator = this.zero();
-      let denominator = this.zero();
+      const weightedItems = relatedMappings.map((mapping) => {
+        const mappingWeight = this.toDecimal(mapping.trongSo);
+        const cloCompletion = cloAggregatedMap.get(mapping.maCLO) ?? this.zero();
 
-      for (const mapping of relatedMappings) {
-        const weight = this.toDecimal(mapping.trongSo);
-        const cloCompletion = cloAverageMap.get(mapping.maCLO) ?? this.zero();
+        const tinChi = this.toDecimal(mapping.clo.hocPhan.soTinChi ?? 0);
+        const effectiveWeight = this.includeCreditsInPlo
+          ? mappingWeight.mul(tinChi)
+          : mappingWeight;
 
-        numerator = numerator.plus(cloCompletion.mul(weight));
-        denominator = denominator.plus(weight);
-      }
+        return {
+          value: cloCompletion,
+          weight: effectiveWeight,
+        };
+      });
 
-      const tiLeDat = this.divideSafe(numerator, denominator);
+      const tiLeDat = this.calculateWeightedAverage(weightedItems);
 
       results.push({
         maPLO: plo.maPLO,

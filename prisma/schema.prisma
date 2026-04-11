@@ -36,6 +36,7 @@ model DonVi {
   hocPhans           HocPhan[]
   giangViens         GiangVien[]
   sinhViens          SinhVien[]
+  cauHinhOBEs        CauHinhOBE[]
 
   @@map("don_vi")
 }
@@ -425,11 +426,15 @@ model KetQuaPLO {
 model CauHinhOBE {
   id              String   @id @default(uuid()) @map("id")
   khoa            Int      @unique @map("khoa")
+  maDonVi         String   @map("ma_don_vi")
   nguongDatCaNhan Decimal  @map("nguong_dat_ca_nhan") @db.Decimal(5, 4)
   kpiLopHoc       Decimal  @map("kpi_lop_hoc") @db.Decimal(5, 4)
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
+
   nienKhoa        NienKhoa @relation(fields: [khoa], references: [khoa])
+  donVi           DonVi    @relation(fields: [maDonVi], references: [maDonVi])
+
   @@map("cau_hinh_obe")
 }
 

@@ -15,11 +15,19 @@ export class CauHinhObeController {
   }
 
   @Get()
-  findAll(@Query("khoa") khoa?: string) {
-    if (khoa) {
-      return this.service.findByKhoa(Number(khoa));
-    }
-    return this.service.findAll();
+  findAll(
+    @Query("khoa") khoa?: string,
+    @Query("maDonVi") maDonVi?: string,
+  ) {
+    return this.service.findAll({
+      khoa: khoa ? Number(khoa) : undefined,
+      maDonVi,
+    });
+  }
+
+  @Get("by-khoa/:khoa")
+  findByKhoa(@Param("khoa") khoa: string) {
+    return this.service.findByKhoa(Number(khoa));
   }
 
   @Get(":id")
