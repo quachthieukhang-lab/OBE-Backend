@@ -29,6 +29,7 @@ import { ObeCalculationModule } from './obe-calculation/obe-calculation.module';
 import { CauHinhObeModule } from './cau-hinh-obe/cau-hinh-obe.module';
 import { UsersModule } from './users/users.module';
 import { LecturerScoresModule } from './lecturer-scores/lecturer-scores.module';
+import { AdminObeDashboardModule } from './admin-obe-dashboard/admin-obe-dashboard.module';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { LecturerScoresModule } from './lecturer-scores/lecturer-scores.module';
     CauHinhObeModule,
     UsersModule,
     LecturerScoresModule,
+    AdminObeDashboardModule,
   ],
 })
 export class AppModule {}
