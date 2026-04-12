@@ -1,23 +1,25 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateChuongTrinhDaoTaoHocPhanDto } from './dto/create-chuong-trinh-dao-tao-hoc-phan.dto';
-import { UpdateChuongTrinhDaoTaoHocPhanDto } from './dto/update-chuong-trinh-dao-tao-hoc-phan.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { CreateChuongTrinhDaoTaoHocPhanDto } from "./dto/create-chuong-trinh-dao-tao-hoc-phan.dto";
+import { UpdateChuongTrinhDaoTaoHocPhanDto } from "./dto/update-chuong-trinh-dao-tao-hoc-phan.dto";
+import { PrismaService } from "src/prisma/prisma.service";
 import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class ChuongTrinhDaoTaoHocPhanService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
-  private key(maSoNganh: string, maHocPhan: string) {
-    return { maSoNganh_maHocPhan: { maSoNganh, maHocPhan } } as const;
+  private key(maSoNganh: string, khoa: number, maHocPhan: string) {
+    return {
+      maSoNganh_khoa_maHocPhan: { maSoNganh, khoa, maHocPhan },
+    } as const;
   }
 
-  private async assertProgramExists(maSoNganh: string) {
-    const ct = await this.prisma.chuongTrinhDaoTao.findUnique({
-      where: { maSoNganh },
-      select: { maSoNganh: true },
+  private async assertCtdtNienKhoaExists(maSoNganh: string, khoa: number) {
+    const row = await this.prisma.chuongTrinhDaoTaoNienKhoa.findUnique({
+      where: { maSoNganh_khoa: { maSoNganh, khoa } },
+      select: { maSoNganh: true, khoa: true },
     });
-    if (!ct) throw new BadRequestException("ChuongTrinhDaoTao not found");
+    if (!row) throw new BadRequestException("ChuongTrinhDaoTaoNienKhoa not found for (maSoNganh, khoa)");
   }
 
   private async assertCourseExists(maHocPhan: string) {
@@ -28,13 +30,14 @@ export class ChuongTrinhDaoTaoHocPhanService {
     if (!hp) throw new BadRequestException("HocPhan not found");
   }
 
-  async create(maSoNganh: string, dto: CreateChuongTrinhDaoTaoHocPhanDto) {
-    await this.assertProgramExists(maSoNganh);
+  async create(maSoNganh: string, khoa: number, dto: CreateChuongTrinhDaoTaoHocPhanDto) {
+    await this.assertCtdtNienKhoaExists(maSoNganh, khoa);
     await this.assertCourseExists(dto.maHocPhan);
     try {
       return await this.prisma.chuongTrinhDaoTaoHocPhan.create({
         data: {
           maSoNganh,
+          khoa,
           maHocPhan: dto.maHocPhan,
           hocKyDuKien: dto.hocKyDuKien,
           namHocDuKien: dto.namHocDuKien,
@@ -42,39 +45,42 @@ export class ChuongTrinhDaoTaoHocPhanService {
           nhomTuChon: dto.nhomTuChon,
           ghiChu: dto.ghiChu,
         },
-        include: { hocPhan: true },
+        include: { hocPhan: true, ctdtNienKhoa: { include: { chuongTrinh: true, nienKhoa: true } } },
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
-        throw new BadRequestException("HocPhan already exists in this program");
+        throw new BadRequestException("HocPhan already exists in this program cohort");
       }
       throw e;
     }
   }
 
-  async findAll(maSoNganh: string) {
-    await this.assertProgramExists(maSoNganh);
+  async findAll(maSoNganh: string, khoa: number) {
+    await this.assertCtdtNienKhoaExists(maSoNganh, khoa);
     return this.prisma.chuongTrinhDaoTaoHocPhan.findMany({
-      where: { maSoNganh },
+      where: { maSoNganh, khoa },
       orderBy: [{ hocKyDuKien: "asc" }, { maHocPhan: "asc" }],
       include: { hocPhan: true },
     });
   }
 
-  async findOne(maSoNganh: string, maHocPhan: string) {
+  async findOne(maSoNganh: string, khoa: number, maHocPhan: string) {
     const item = await this.prisma.chuongTrinhDaoTaoHocPhan.findUnique({
-      where: this.key(maSoNganh, maHocPhan),
-      include: { hocPhan: true, chuongTrinh: true },
+      where: this.key(maSoNganh, khoa, maHocPhan),
+      include: {
+        hocPhan: true,
+        ctdtNienKhoa: { include: { chuongTrinh: true, nienKhoa: true } },
+      },
     });
 
     if (!item) throw new NotFoundException("CTDT-HocPhan not found");
     return item;
   }
 
-  async update(maSoNganh: string, maHocPhan: string, dto: UpdateChuongTrinhDaoTaoHocPhanDto) {
-    await this.findOne(maSoNganh, maHocPhan);
+  async update(maSoNganh: string, khoa: number, maHocPhan: string, dto: UpdateChuongTrinhDaoTaoHocPhanDto) {
+    await this.findOne(maSoNganh, khoa, maHocPhan);
     return this.prisma.chuongTrinhDaoTaoHocPhan.update({
-      where: this.key(maSoNganh, maHocPhan),
+      where: this.key(maSoNganh, khoa, maHocPhan),
       data: {
         hocKyDuKien: dto.hocKyDuKien,
         namHocDuKien: dto.namHocDuKien,
@@ -86,10 +92,10 @@ export class ChuongTrinhDaoTaoHocPhanService {
     });
   }
 
-  async remove(maSoNganh: string, maHocPhan: string) {
-    await this.findOne(maSoNganh, maHocPhan);
+  async remove(maSoNganh: string, khoa: number, maHocPhan: string) {
+    await this.findOne(maSoNganh, khoa, maHocPhan);
     return this.prisma.chuongTrinhDaoTaoHocPhan.delete({
-      where: this.key(maSoNganh, maHocPhan),
+      where: this.key(maSoNganh, khoa, maHocPhan),
     });
   }
 }

@@ -8,61 +8,61 @@ import { UpdateCachDanhGiaDto } from "./dto/update-cach-danh-gia.dto";
 export class CachDanhGiaService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async assertHocPhanExists(maHocPhan: string) {
-    const hp = await this.prisma.hocPhan.findUnique({
-      where: { maHocPhan },
-      select: { maHocPhan: true },
+  private async assertDeCuongExists(maDeCuong: string) {
+    const dc = await this.prisma.deCuongChiTiet.findUnique({
+      where: { maDeCuong },
+      select: { maDeCuong: true },
     });
-    if (!hp) throw new BadRequestException("HocPhan not found");
+    if (!dc) throw new BadRequestException("DeCuongChiTiet not found");
   }
 
-  async create(maHocPhan: string, dto: CreateCachDanhGiaDto) {
-    await this.assertHocPhanExists(maHocPhan);
+  async create(maDeCuong: string, dto: CreateCachDanhGiaDto) {
+    await this.assertDeCuongExists(maDeCuong);
 
     try {
       return await this.prisma.cachDanhGia.create({
         data: {
-          maHocPhan,
+          maDeCuong,
           cachDanhGia: dto.cachDanhGia,
           tenThanhPhan: dto.tenThanhPhan,
           loai: dto.loai,
           trongSo: new Prisma.Decimal(dto.trongSo),
         },
-        include: { hocPhan: true },
+        include: { deCuong: { include: { hocPhan: true } } },
       });
     } catch (e: any) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === "P2002") throw new BadRequestException("Unique constraint failed (cachDanhGia)");
-        if (e.code === "P2003") throw new BadRequestException("Foreign key invalid (maHocPhan)");
+        if (e.code === "P2003") throw new BadRequestException("Foreign key invalid (maDeCuong)");
       }
       throw e;
     }
   }
 
-  async findAll(maHocPhan: string) {
-    await this.assertHocPhanExists(maHocPhan);
+  async findAll(maDeCuong: string) {
+    await this.assertDeCuongExists(maDeCuong);
 
     return this.prisma.cachDanhGia.findMany({
-      where: { maHocPhan },
+      where: { maDeCuong },
       orderBy: { tenThanhPhan: "asc" },
     });
   }
 
-  async findOne(maHocPhan: string, maCDG: string) {
+  async findOne(maDeCuong: string, maCDG: string) {
     const item = await this.prisma.cachDanhGia.findFirst({
-      where: { maHocPhan, maCDG },
-      include: { hocPhan: true },
+      where: { maDeCuong, maCDG },
+      include: { deCuong: { include: { hocPhan: true } } },
     });
     if (!item) throw new NotFoundException("CachDanhGia not found");
     return item;
   }
 
-  async update(maHocPhan: string, maCDG: string, dto: UpdateCachDanhGiaDto) {
-    await this.findOne(maHocPhan, maCDG);
+  async update(maDeCuong: string, maCDG: string, dto: UpdateCachDanhGiaDto) {
+    await this.findOne(maDeCuong, maCDG);
 
     try {
       return await this.prisma.cachDanhGia.update({
-        where: { maCDG }, // maCDG là PK, update theo PK
+        where: { maCDG },
         data: {
           cachDanhGia: dto.cachDanhGia,
           tenThanhPhan: dto.tenThanhPhan,
@@ -78,8 +78,8 @@ export class CachDanhGiaService {
     }
   }
 
-  async remove(maHocPhan: string, maCDG: string) {
-    await this.findOne(maHocPhan, maCDG);
+  async remove(maDeCuong: string, maCDG: string) {
+    await this.findOne(maDeCuong, maCDG);
 
     try {
       return await this.prisma.cachDanhGia.delete({ where: { maCDG } });

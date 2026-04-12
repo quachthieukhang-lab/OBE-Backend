@@ -8,53 +8,36 @@ import { UpdateLopHocPhanDto } from "./dto/update-lop-hoc-phan.dto";
 export class LopHocPhanService {
   constructor(private readonly prisma: PrismaService) { }
 
-  private async assertRefs(dto: { MSGV?: string; maHocPhan?: string; khoa?: number }) {
+  private async assertRefs(dto: { MSGV?: string; maHocPhan?: string; khoa?: number; maDeCuong?: string }) {
     const tasks: Promise<any>[] = [];
+    const labels: string[] = [];
 
     if (dto.MSGV) {
-      tasks.push(
-        this.prisma.giangVien.findUnique({
-          where: { MSGV: dto.MSGV },
-          select: { MSGV: true },
-        })
-      );
+      tasks.push(this.prisma.giangVien.findUnique({ where: { MSGV: dto.MSGV }, select: { MSGV: true } }));
+      labels.push("GiangVien not found");
     }
     if (dto.maHocPhan) {
-      tasks.push(
-        this.prisma.hocPhan.findUnique({
-          where: { maHocPhan: dto.maHocPhan },
-          select: { maHocPhan: true },
-        })
-      );
+      tasks.push(this.prisma.hocPhan.findUnique({ where: { maHocPhan: dto.maHocPhan }, select: { maHocPhan: true } }));
+      labels.push("HocPhan not found");
     }
     if (dto.khoa != null) {
-      tasks.push(
-        this.prisma.nienKhoa.findUnique({
-          where: { khoa: dto.khoa },
-          select: { khoa: true },
-        })
-      );
+      tasks.push(this.prisma.nienKhoa.findUnique({ where: { khoa: dto.khoa }, select: { khoa: true } }));
+      labels.push("NienKhoa not found");
+    }
+    if (dto.maDeCuong) {
+      tasks.push(this.prisma.deCuongChiTiet.findUnique({ where: { maDeCuong: dto.maDeCuong }, select: { maDeCuong: true } }));
+      labels.push("DeCuongChiTiet not found");
     }
 
     const results = await Promise.all(tasks);
 
-    let i = 0;
-    if (dto.MSGV) {
-      const ok = results[i++];
-      if (!ok) throw new BadRequestException("GiangVien not found");
-    }
-    if (dto.maHocPhan) {
-      const ok = results[i++];
-      if (!ok) throw new BadRequestException("HocPhan not found");
-    }
-    if (dto.khoa != null) {
-      const ok = results[i++];
-      if (!ok) throw new BadRequestException("NienKhoa not found");
+    for (let i = 0; i < results.length; i++) {
+      if (!results[i]) throw new BadRequestException(labels[i]);
     }
   }
 
   async create(dto: CreateLopHocPhanDto) {
-    await this.assertRefs({ MSGV: dto.MSGV, maHocPhan: dto.maHocPhan, khoa: dto.khoa });
+    await this.assertRefs({ MSGV: dto.MSGV, maHocPhan: dto.maHocPhan, khoa: dto.khoa, maDeCuong: dto.maDeCuong });
 
     // optional: validate date range
 
@@ -66,13 +49,15 @@ export class LopHocPhanService {
         const end = new Date(ngayKetThuc);
         if (end < start) throw new BadRequestException("ngayKetThuc must be >= ngayBatDau");
       }
+      const { maDeCuong, ...createData } = rest;
       return await this.prisma.lopHocPhan.create({
         data: {
-          ...rest,
+          ...createData,
+          maDeCuong: dto.maDeCuong ?? undefined,
           ngayBatDau: dto.ngayBatDau ? new Date(dto.ngayBatDau) : undefined,
           ngayKetThuc: dto.ngayKetThuc ? new Date(dto.ngayKetThuc) : undefined,
         },
-        include: { giangVien: true, hocPhan: true, nienKhoa: true },
+        include: { giangVien: true, hocPhan: true, nienKhoa: true, deCuong: true },
       });
     } catch (e: any) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
@@ -86,7 +71,7 @@ export class LopHocPhanService {
   async findAll() {
     return this.prisma.lopHocPhan.findMany({
       orderBy: [{ khoa: "desc" }, { hocKy: "desc" }, { maLopHocPhan: "asc" }],
-      include: { giangVien: true, hocPhan: true, nienKhoa: true },
+      include: { giangVien: true, hocPhan: true, nienKhoa: true, deCuong: true },
     });
   }
 
@@ -97,6 +82,7 @@ export class LopHocPhanService {
         giangVien: true,
         hocPhan: true,
         nienKhoa: true,
+        deCuong: true,
         dangKyHocPhans: true,
       },
     });
@@ -106,7 +92,7 @@ export class LopHocPhanService {
 
   async update(maLopHocPhan: string, dto: UpdateLopHocPhanDto) {
     await this.findOne(maLopHocPhan);
-    await this.assertRefs({ MSGV: dto.MSGV, maHocPhan: dto.maHocPhan, khoa: dto.khoa });
+    await this.assertRefs({ MSGV: dto.MSGV, maHocPhan: dto.maHocPhan, khoa: dto.khoa, maDeCuong: dto.maDeCuong });
 
     if (dto.ngayBatDau && dto.ngayKetThuc) {
       const start = new Date(dto.ngayBatDau);
@@ -116,9 +102,9 @@ export class LopHocPhanService {
     return this.prisma.lopHocPhan.update({
       where: { maLopHocPhan },
       data: {
-        // không cho update maLopHocPhan vì là PK
         MSGV: dto.MSGV,
         maHocPhan: dto.maHocPhan,
+        maDeCuong: dto.maDeCuong,
         khoa: dto.khoa,
         hocKy: dto.hocKy,
         nhom: dto.nhom,
@@ -129,7 +115,7 @@ export class LopHocPhanService {
         ngayKetThuc: dto.ngayKetThuc ? new Date(dto.ngayKetThuc) : undefined,
         status: dto.status,
       },
-      include: { giangVien: true, hocPhan: true, nienKhoa: true },
+      include: { giangVien: true, hocPhan: true, nienKhoa: true, deCuong: true },
     });
   }
 

@@ -5,49 +5,49 @@ import { CreateCdgCoMappingDto } from "./dto/create-cdg-co-mapping.dto";
 import { UpdateCdgCoMappingDto } from "./dto/update-cdg-co-mapping.dto";
 
 @ApiTags("cdg-co-mapping")
-@Controller("hoc-phan/:maHocPhan/cach-danh-gia/:maCDG/co-mapping")
+@Controller("de-cuong-chi-tiet/:maDeCuong/cach-danh-gia/:maCDG/co-mapping")
 export class CdgCoMappingController {
   constructor(private readonly service: CdgCoMappingService) {}
 
   @Post()
   create(
-    @Param("maHocPhan") maHocPhan: string,
+    @Param("maDeCuong") maDeCuong: string,
     @Param("maCDG") maCDG: string,
-    @Body() dto: CreateCdgCoMappingDto
+    @Body() dto: CreateCdgCoMappingDto,
   ) {
-    return this.service.create(maHocPhan, maCDG, dto);
+    return this.service.create(maDeCuong, maCDG, dto);
   }
 
   @Get()
-  findAll(@Param("maHocPhan") maHocPhan: string, @Param("maCDG") maCDG: string) {
-    return this.service.findAll(maHocPhan, maCDG);
+  findAll(@Param("maDeCuong") maDeCuong: string, @Param("maCDG") maCDG: string) {
+    return this.service.findAll(maDeCuong, maCDG);
   }
 
   @Get(":maCO")
   findOne(
-    @Param("maHocPhan") maHocPhan: string,
+    @Param("maDeCuong") maDeCuong: string,
     @Param("maCDG") maCDG: string,
-    @Param("maCO") maCO: string
+    @Param("maCO") maCO: string,
   ) {
-    return this.service.findOne(maHocPhan, maCDG, maCO);
+    return this.service.findOne(maDeCuong, maCDG, maCO);
   }
 
   @Patch(":maCO")
   update(
-    @Param("maHocPhan") maHocPhan: string,
+    @Param("maDeCuong") maDeCuong: string,
     @Param("maCDG") maCDG: string,
     @Param("maCO") maCO: string,
-    @Body() dto: UpdateCdgCoMappingDto
+    @Body() dto: UpdateCdgCoMappingDto,
   ) {
-    return this.service.update(maHocPhan, maCDG, maCO, dto);
+    return this.service.update(maDeCuong, maCDG, maCO, dto);
   }
 
   @Delete(":maCO")
   remove(
-    @Param("maHocPhan") maHocPhan: string,
+    @Param("maDeCuong") maDeCuong: string,
     @Param("maCDG") maCDG: string,
-    @Param("maCO") maCO: string
+    @Param("maCO") maCO: string,
   ) {
-    return this.service.remove(maHocPhan, maCDG, maCO);
+    return this.service.remove(maDeCuong, maCDG, maCO);
   }
 }

@@ -1,28 +1,29 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreatePloDto } from './dto/create-plo.dto';
-import { UpdatePloDto } from './dto/update-plo.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { CreatePloDto } from "./dto/create-plo.dto";
+import { UpdatePloDto } from "./dto/update-plo.dto";
+import { PrismaService } from "src/prisma/prisma.service";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class PloService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
-  private async assertProgramExists(maSoNganh: string) {
-    const ct = await this.prisma.chuongTrinhDaoTao.findUnique({
-      where: { maSoNganh },
-      select: { maSoNganh: true },
+  private async assertCtdtNienKhoaExists(maSoNganh: string, khoa: number) {
+    const row = await this.prisma.chuongTrinhDaoTaoNienKhoa.findUnique({
+      where: { maSoNganh_khoa: { maSoNganh, khoa } },
+      select: { maSoNganh: true, khoa: true },
     });
-    if (!ct) throw new BadRequestException("ChuongTrinhDaoTao not found");
+    if (!row) throw new BadRequestException("ChuongTrinhDaoTaoNienKhoa not found for (maSoNganh, khoa)");
   }
 
-  async create(maSoNganh: string, dto: CreatePloDto) {
-    await this.assertProgramExists(maSoNganh);
+  async create(maSoNganh: string, khoa: number, dto: CreatePloDto) {
+    await this.assertCtdtNienKhoaExists(maSoNganh, khoa);
 
     try {
       return await this.prisma.pLO.create({
         data: {
           maSoNganh,
+          khoa,
           noiDungChuanDauRa: dto.noiDungChuanDauRa,
           code: dto.code,
           nhom: dto.nhom,
@@ -31,33 +32,33 @@ export class PloService {
           isActive: dto.isActive ?? true,
         },
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
-        if (e.code === "P2003") throw new BadRequestException("Foreign key invalid (maSoNganh)");
+        if (e.code === "P2003") throw new BadRequestException("Foreign key invalid (maSoNganh, khoa)");
       }
       throw e;
     }
   }
 
-  async findAll(maSoNganh: string) {
-    await this.assertProgramExists(maSoNganh);
+  async findAll(maSoNganh: string, khoa: number) {
+    await this.assertCtdtNienKhoaExists(maSoNganh, khoa);
 
     return this.prisma.pLO.findMany({
-      where: { maSoNganh },
+      where: { maSoNganh, khoa },
       orderBy: [{ code: "asc" }, { maPLO: "asc" }],
     });
   }
 
-  async findOne(maSoNganh: string, maPLO: string) {
+  async findOne(maSoNganh: string, khoa: number, maPLO: string) {
     const item = await this.prisma.pLO.findFirst({
-      where: { maSoNganh, maPLO },
+      where: { maSoNganh, khoa, maPLO },
     });
     if (!item) throw new NotFoundException("PLO not found");
     return item;
   }
 
-  async update(maSoNganh: string, maPLO: string, dto: UpdatePloDto) {
-    await this.findOne(maSoNganh, maPLO);
+  async update(maSoNganh: string, khoa: number, maPLO: string, dto: UpdatePloDto) {
+    await this.findOne(maSoNganh, khoa, maPLO);
 
     return this.prisma.pLO.update({
       where: { maPLO },
@@ -72,8 +73,8 @@ export class PloService {
     });
   }
 
-  async remove(maSoNganh: string, maPLO: string) {
-    await this.findOne(maSoNganh, maPLO);
+  async remove(maSoNganh: string, khoa: number, maPLO: string) {
+    await this.findOne(maSoNganh, khoa, maPLO);
 
     return this.prisma.pLO.delete({
       where: { maPLO },

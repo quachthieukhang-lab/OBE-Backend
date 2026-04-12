@@ -25,9 +25,9 @@ export class CauHinhObeController {
     });
   }
 
-  @Get("by-khoa/:khoa")
-  findByKhoa(@Param("khoa") khoa: string) {
-    return this.service.findByKhoa(Number(khoa));
+  @Get("by-khoa/:khoa/don-vi/:maDonVi")
+  findByKhoaAndDonVi(@Param("khoa") khoa: string, @Param("maDonVi") maDonVi: string) {
+    return this.service.findByKhoaAndDonVi(Number(khoa), maDonVi);
   }
 
   @Get(":id")

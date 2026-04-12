@@ -57,9 +57,13 @@ export class ChuongTrinhDaoTaoService {
       where: { maSoNganh },
       include: {
         donVi: true,
-        chuongTrinhNienKhoas: { include: { nienKhoa: true } },
-        chuongTrinhHocPhans: { include: { hocPhan: true } },
-        plos: true,
+        chuongTrinhNienKhoas: {
+          include: {
+            nienKhoa: true,
+            chuongTrinhHocPhans: { include: { hocPhan: true } },
+            plos: true,
+          },
+        },
       },
     });
 

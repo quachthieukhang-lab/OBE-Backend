@@ -4,13 +4,17 @@ import { PrismaService } from "src/prisma/prisma.service";
 import { CreateDiemSoDto } from "./dto/create-diem-so.dto";
 import { UpdateDiemSoDto } from "./dto/update-diem-so.dto";
 import { ObeCalculationService } from "../obe-calculation/obe-calculation.service";
+
 @Injectable()
 export class DiemSoService {
-  constructor(private readonly prisma: PrismaService, private readonly obeCalculationService: ObeCalculationService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly obeCalculationService: ObeCalculationService,
+  ) {}
 
   private calculateTiLeHoanThanh(
     diem: Prisma.Decimal,
-    trongSo: Prisma.Decimal
+    trongSo: Prisma.Decimal,
   ): Prisma.Decimal {
     if (trongSo.equals(0)) {
       return new Prisma.Decimal(0);
@@ -57,7 +61,7 @@ export class DiemSoService {
       where: { maCDG },
       select: {
         maCDG: true,
-        maHocPhan: true,
+        maDeCuong: true,
         trongSo: true,
       },
     });
@@ -164,7 +168,7 @@ export class DiemSoService {
       nextDiem = new Prisma.Decimal(dto.diem);
       nextTiLeHoanThanh = this.calculateTiLeHoanThanh(
         nextDiem,
-        new Prisma.Decimal(cdg.trongSo)
+        new Prisma.Decimal(cdg.trongSo),
       );
     }
 
@@ -194,9 +198,13 @@ export class DiemSoService {
   async remove(maDangKy: string, maCDG: string) {
     const current = await this.findOne(maDangKy, maCDG);
 
-    return this.prisma.diemSo.delete({
+    const deleted = await this.prisma.diemSo.delete({
       where: { id: current.id },
     });
+
+    await this.obeCalculationService.recalculateObeResultsForEnrollment(maDangKy);
+
+    return deleted;
   }
 
   async createForEnrollment(
@@ -209,7 +217,7 @@ export class DiemSoService {
       MSGV,
     });
   }
-  
+
   async updateForEnrollment(
     maDangKy: string,
     maCDG: string,

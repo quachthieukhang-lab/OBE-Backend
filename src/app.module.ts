@@ -30,6 +30,9 @@ import { CauHinhObeModule } from './cau-hinh-obe/cau-hinh-obe.module';
 import { UsersModule } from './users/users.module';
 import { LecturerScoresModule } from './lecturer-scores/lecturer-scores.module';
 import { AdminObeDashboardModule } from './admin-obe-dashboard/admin-obe-dashboard.module';
+import { DeCuongChiTietModule } from './de-cuong-chi-tiet/de-cuong-chi-tiet.module';
+import { LecturerDashboardModule } from './lecturer-dashboard/lecturer-dashboard.module';
+import { LecturerDeCuongModule } from './lecturer-de-cuong/lecturer-de-cuong.module';
 
 @Module({
   imports: [
@@ -74,6 +77,9 @@ import { AdminObeDashboardModule } from './admin-obe-dashboard/admin-obe-dashboa
     UsersModule,
     LecturerScoresModule,
     AdminObeDashboardModule,
+    DeCuongChiTietModule,
+    LecturerDashboardModule,
+    LecturerDeCuongModule,
   ],
 })
 export class AppModule {}

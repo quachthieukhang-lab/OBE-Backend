@@ -9,12 +9,6 @@ type RetakeStrategy = "MAX" | "LATEST" | "AVERAGE";
 export class ObeCalculationService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   * Có thể đổi sau bằng config DB nếu cần.
-   * Tạm thời:
-   * - MAX: lấy kết quả CLO cao nhất khi sinh viên học lại
-   * - includeCreditsInPlo: có nhân thêm số tín chỉ khi tính PLO hay không
-   */
   private readonly retakeStrategy: RetakeStrategy = "MAX";
   private readonly includeCreditsInPlo = true;
 
@@ -52,6 +46,7 @@ export class ObeCalculationService {
           select: {
             maLopHocPhan: true,
             maHocPhan: true,
+            maDeCuong: true,
             khoa: true,
             hocKy: true,
           },
@@ -63,14 +58,15 @@ export class ObeCalculationService {
       throw new NotFoundException("DangKyHocPhan not found");
     }
 
+    if (!enrollment.lopHocPhan.maDeCuong) {
+      throw new NotFoundException(
+        "LopHocPhan chưa gắn đề cương chi tiết (maDeCuong). Không thể tính OBE.",
+      );
+    }
+
     return enrollment;
   }
 
-  /**
-   * Weighted average chuẩn:
-   * numerator = Σ(value * weight)
-   * denominator = Σ(weight)
-   */
   private calculateWeightedAverage(
     items: Array<{ value: Prisma.Decimal; weight: Prisma.Decimal }>,
   ) {
@@ -87,10 +83,6 @@ export class ObeCalculationService {
     return this.divideSafe(numerator, denominator);
   }
 
-  /**
-   * Gom nhiều kết quả CLO cùng maCLO khi sinh viên học lại / cải thiện.
-   * Mặc định: lấy MAX.
-   */
   private aggregateRetakeResults(
     rows: Array<{
       maCLO: string;
@@ -140,7 +132,6 @@ export class ObeCalculationService {
         continue;
       }
 
-      // AVERAGE
       let sum = this.zero();
       for (const item of values) {
         sum = sum.plus(item.tiLeDat);
@@ -151,31 +142,35 @@ export class ObeCalculationService {
     return result;
   }
 
-  /**
-   * Recalculate toàn bộ kết quả OBE cho 1 đăng ký học phần
-   */
   async recalculateObeResultsForEnrollment(maDangKy: string) {
     const enrollment = await this.getEnrollmentOrThrow(maDangKy);
     const MSSV = enrollment.MSSV;
     const maLopHocPhan = enrollment.maLopHocPhan;
-    const maHocPhan = enrollment.lopHocPhan.maHocPhan;
+    const maDeCuong = enrollment.lopHocPhan.maDeCuong!;
+
+    const sinhVien = await this.prisma.sinhVien.findUnique({
+      where: { MSSV },
+      select: { maSoNganh: true, khoa: true },
+    });
 
     await this.prisma.$transaction(async (tx) => {
       await this.recalculateCO(tx, {
         maDangKy,
         MSSV,
         maLopHocPhan,
-        maHocPhan,
+        maDeCuong,
       });
 
       await this.recalculateCLO(tx, {
         MSSV,
         maLopHocPhan,
-        maHocPhan,
+        maDeCuong,
       });
 
       await this.recalculatePLO(tx, {
         MSSV,
+        maSoNganh: sinhVien?.maSoNganh ?? null,
+        khoa: sinhVien?.khoa ?? null,
       });
     });
 
@@ -184,15 +179,14 @@ export class ObeCalculationService {
       maDangKy,
       MSSV,
       maLopHocPhan,
-      maHocPhan,
+      maDeCuong,
       retakeStrategy: this.retakeStrategy,
       includeCreditsInPlo: this.includeCreditsInPlo,
     };
   }
 
   /**
-   * 1) CDG -> CO
-   * KetQuaCO theo từng sinh viên, từng lớp
+   * CDG -> CO (scoped to the syllabus version via maDeCuong)
    */
   private async recalculateCO(
     tx: Prisma.TransactionClient,
@@ -200,10 +194,10 @@ export class ObeCalculationService {
       maDangKy: string;
       MSSV: string;
       maLopHocPhan: string;
-      maHocPhan: string;
+      maDeCuong: string;
     },
   ) {
-    const { maDangKy, MSSV, maLopHocPhan, maHocPhan } = input;
+    const { maDangKy, MSSV, maLopHocPhan, maDeCuong } = input;
 
     const [scores, mappings, cos] = await Promise.all([
       tx.diemSo.findMany({
@@ -215,9 +209,7 @@ export class ObeCalculationService {
       }),
       tx.cdgCoMapping.findMany({
         where: {
-          cdg: {
-            maHocPhan,
-          },
+          cdg: { maDeCuong },
         },
         select: {
           maCDG: true,
@@ -226,7 +218,7 @@ export class ObeCalculationService {
         },
       }),
       tx.cO.findMany({
-        where: { maHocPhan },
+        where: { maDeCuong },
         select: {
           maCO: true,
         },
@@ -281,27 +273,24 @@ export class ObeCalculationService {
   }
 
   /**
-   * 2) CO -> CLO
-   * KetQuaCLO theo từng sinh viên, từng lớp
+   * CO -> CLO (scoped to the syllabus version via maDeCuong)
    */
   private async recalculateCLO(
     tx: Prisma.TransactionClient,
     input: {
       MSSV: string;
       maLopHocPhan: string;
-      maHocPhan: string;
+      maDeCuong: string;
     },
   ) {
-    const { MSSV, maLopHocPhan, maHocPhan } = input;
+    const { MSSV, maLopHocPhan, maDeCuong } = input;
 
     const [ketQuaCOs, mappings, clos] = await Promise.all([
       tx.ketQuaCO.findMany({
         where: {
           MSSV,
           maLopHocPhan,
-          co: {
-            maHocPhan,
-          },
+          co: { maDeCuong },
         },
         select: {
           maCO: true,
@@ -310,9 +299,7 @@ export class ObeCalculationService {
       }),
       tx.cloCoMapping.findMany({
         where: {
-          clo: {
-            maHocPhan,
-          },
+          clo: { maDeCuong },
         },
         select: {
           maCLO: true,
@@ -321,7 +308,7 @@ export class ObeCalculationService {
         },
       }),
       tx.cLO.findMany({
-        where: { maHocPhan },
+        where: { maDeCuong },
         select: {
           maCLO: true,
         },
@@ -375,16 +362,33 @@ export class ObeCalculationService {
     }
   }
 
-
+  /**
+   * CLO -> PLO (aggregated across all CLOs the student has, filtered to CTDT's PLOs)
+   */
   private async recalculatePLO(
     tx: Prisma.TransactionClient,
     input: {
       MSSV: string;
+      maSoNganh: string | null;
+      khoa: number | null;
     },
   ) {
-    const { MSSV } = input;
+    const { MSSV, maSoNganh, khoa } = input;
 
-    const [ketQuaCLOs, mappings, plos] = await Promise.all([
+    if (maSoNganh == null || khoa == null) {
+      return;
+    }
+
+    const plos = await tx.pLO.findMany({
+      where: { maSoNganh, khoa },
+      select: { maPLO: true },
+    });
+
+    if (plos.length === 0) return;
+
+    const allowedPloIds = plos.map((p) => p.maPLO);
+
+    const [ketQuaCLOs, mappings] = await Promise.all([
       tx.ketQuaCLO.findMany({
         where: { MSSV },
         select: {
@@ -395,24 +399,24 @@ export class ObeCalculationService {
         },
       }),
       tx.cloPloMapping.findMany({
+        where: {
+          maPLO: { in: allowedPloIds },
+        },
         select: {
           maCLO: true,
           maPLO: true,
           trongSo: true,
           clo: {
             select: {
-              hocPhan: {
+              deCuong: {
                 select: {
-                  soTinChi: true,
+                  hocPhan: {
+                    select: { soTinChi: true },
+                  },
                 },
               },
             },
           },
-        },
-      }),
-      tx.pLO.findMany({
-        select: {
-          maPLO: true,
         },
       }),
     ]);
@@ -434,21 +438,19 @@ export class ObeCalculationService {
     for (const plo of plos) {
       const relatedMappings = mappings.filter((m) => m.maPLO === plo.maPLO);
 
-      // 🛑 THÊM CỜ KIỂM TRA: Xem sinh viên đã tích lũy bất kỳ CLO nào thuộc PLO này chưa
       let hasAttemptedAnyCLO = false;
 
       const weightedItems = relatedMappings.map((mapping) => {
         const mappingWeight = this.toDecimal(mapping.trongSo);
-        
+
         let cloCompletion = this.zero();
-        
-        // 🛑 SỬA LOGIC Ở ĐÂY: Nếu Map chứa CLO này, tức là sinh viên đã học và có điểm
+
         if (cloAggregatedMap.has(mapping.maCLO)) {
           cloCompletion = cloAggregatedMap.get(mapping.maCLO) ?? this.zero();
-          hasAttemptedAnyCLO = true; // Bật cờ đánh dấu đã có dữ liệu
+          hasAttemptedAnyCLO = true;
         }
 
-        const tinChi = this.toDecimal(mapping.clo.hocPhan.soTinChi ?? 0);
+        const tinChi = this.toDecimal(mapping.clo.deCuong.hocPhan.soTinChi ?? 0);
         const effectiveWeight = this.includeCreditsInPlo
           ? mappingWeight.mul(tinChi)
           : mappingWeight;
@@ -459,7 +461,6 @@ export class ObeCalculationService {
         };
       });
 
-      // 🛑 ĐIỂM CHỐT CHẶN: Nếu chưa học bất kỳ môn nào có map với PLO này -> Bỏ qua, không tính, không lưu!
       if (!hasAttemptedAnyCLO) {
         continue;
       }

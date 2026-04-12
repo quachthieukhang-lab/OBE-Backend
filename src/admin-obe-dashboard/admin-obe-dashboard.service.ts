@@ -179,12 +179,16 @@ export class AdminObeDashboardService {
         clo: {
           select: {
             maCLO: true,
-            maHocPhan: true,
             code: true,
-            hocPhan: {
+            deCuong: {
               select: {
                 maHocPhan: true,
-                tenHocPhan: true,
+                hocPhan: {
+                  select: {
+                    maHocPhan: true,
+                    tenHocPhan: true,
+                  },
+                },
               },
             },
           },
@@ -209,8 +213,8 @@ export class AdminObeDashboardService {
     >();
 
     for (const row of rows) {
-      const maHocPhan = row.clo.maHocPhan;
-      const tenHocPhan = row.clo.hocPhan.tenHocPhan;
+      const maHocPhan = row.clo.deCuong.maHocPhan;
+      const tenHocPhan = row.clo.deCuong.hocPhan.tenHocPhan;
 
       if (!courseMap.has(maHocPhan)) {
         courseMap.set(maHocPhan, {

@@ -1,5 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
-import { ApiTags } from "@nestjs/swagger";
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from "@nestjs/common";
+import { ApiQuery, ApiTags } from "@nestjs/swagger";
 import { HocPhanService } from "./hoc-phan.service";
 import { CreateHocPhanDto } from "./dto/create-hoc-phan.dto";
 import { UpdateHocPhanDto } from "./dto/update-hoc-phan.dto";
@@ -35,22 +35,17 @@ export class HocPhanController {
   }
 
   @Get(":maHocPhan/plo-options")
-  getPloOptions(@Param("maHocPhan") maHocPhan: string) {
-    return this.service.getPloOptions(maHocPhan);
-  }
-
-  @Get(":maHocPhan/clo-plo-mapping")
-  getCloPloMappingMatrix(@Param("maHocPhan") maHocPhan: string) {
-    return this.service.getCloPloMappingMatrix(maHocPhan);
-  }
-
-  @Get(":maHocPhan/clo-co-mapping")
-  getCloCoMappingMatrix(@Param("maHocPhan") maHocPhan: string) {
-    return this.service.getCloCoMappingMatrix(maHocPhan);
-  }
-
-  @Get(":maHocPhan/cdg-co-mapping")
-  getCdgCoMappingMatrix(@Param("maHocPhan") maHocPhan: string) {
-    return this.service.getCdgCoMappingMatrix(maHocPhan);
+  @ApiQuery({ name: "maSoNganh", required: false, description: "Lọc PLO theo ngành (bắt buộc kèm khoa)" })
+  @ApiQuery({ name: "khoa", required: false, description: "Lọc PLO theo khóa / niên khóa (số nguyên, bắt buộc kèm maSoNganh)" })
+  getPloOptions(
+    @Param("maHocPhan") maHocPhan: string,
+    @Query("maSoNganh") maSoNganh?: string,
+    @Query("khoa") khoaStr?: string,
+  ) {
+    const khoa = khoaStr != null && khoaStr !== "" ? Number(khoaStr) : undefined;
+    return this.service.getPloOptions(maHocPhan, {
+      maSoNganh: maSoNganh?.trim() || undefined,
+      khoa: khoa !== undefined && Number.isInteger(khoa) ? khoa : undefined,
+    });
   }
 }

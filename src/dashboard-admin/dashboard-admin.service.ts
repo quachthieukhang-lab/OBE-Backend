@@ -79,16 +79,18 @@ export class DashboardAdminService {
       }),
 
       this.prisma.chuongTrinhDaoTaoHocPhan.groupBy({
-        by: ["maSoNganh"],
+        by: ["maSoNganh", "khoa"],
         _count: {
           maHocPhan: true,
         },
       }),
     ]);
 
-    const courseCountMap = new Map(
-      courseProgramLinks.map((item) => [item.maSoNganh, item._count.maHocPhan])
-    );
+    const courseCountMap = new Map<string, number>();
+    for (const item of courseProgramLinks) {
+      const prev = courseCountMap.get(item.maSoNganh) ?? 0;
+      courseCountMap.set(item.maSoNganh, prev + item._count.maHocPhan);
+    }
 
     const coursesByProgram = programs.map((program) => ({
       maSoNganh: program.maSoNganh,

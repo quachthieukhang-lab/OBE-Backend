@@ -57,10 +57,10 @@ export class HocPhanService {
       where: { maHocPhan },
       include: {
         donVi: true,
-        // nếu bạn muốn kèm relations:
-        // clos: true,
-        // cos: true,
-        // lopHocPhans: true,
+        deCuongs: {
+          orderBy: { createdAt: "desc" },
+          select: { maDeCuong: true, phienBan: true, trangThai: true, ngayApDung: true },
+        },
       },
     });
     if (!item) throw new NotFoundException("HocPhan not found");
@@ -88,201 +88,63 @@ export class HocPhanService {
     return this.prisma.hocPhan.delete({ where: { maHocPhan } });
   }
 
-  async getPloOptions(maHocPhan: string) {
+  private resolveProgramCohortPairs(
+    programLinks: Array<{ maSoNganh: string; khoa: number }>,
+    filter?: { maSoNganh?: string; khoa?: number },
+  ) {
+    const uniquePairs = programLinks.filter(
+      (x, i, arr) => arr.findIndex((y) => y.maSoNganh === x.maSoNganh && y.khoa === x.khoa) === i,
+    );
+
+    const hasMa = filter?.maSoNganh != null && filter.maSoNganh !== "";
+    const hasKhoa = filter?.khoa != null && !Number.isNaN(filter.khoa);
+
+    if (hasMa !== hasKhoa) {
+      throw new BadRequestException("Khi lọc theo khóa, phải gửi đồng thời query maSoNganh và khoa");
+    }
+
+    if (hasMa && hasKhoa) {
+      const maSoNganh = filter!.maSoNganh!;
+      const khoa = filter!.khoa!;
+      const ok = uniquePairs.some((p) => p.maSoNganh === maSoNganh && p.khoa === khoa);
+      if (!ok) {
+        throw new BadRequestException("Học phần không nằm trong khung CTĐT của (maSoNganh, khoa) đã chọn");
+      }
+      return [{ maSoNganh, khoa }];
+    }
+
+    return uniquePairs;
+  }
+
+  async getPloOptions(
+    maHocPhan: string,
+    filter?: { maSoNganh?: string; khoa?: number },
+  ) {
     await this.assertHocPhanExists(maHocPhan);
 
-    // Tìm tất cả CTĐT có chứa học phần này
     const programLinks = await this.prisma.chuongTrinhDaoTaoHocPhan.findMany({
       where: { maHocPhan },
-      select: { maSoNganh: true },
+      select: { maSoNganh: true, khoa: true },
     });
 
-    const maSoNganhs = [...new Set(programLinks.map((x) => x.maSoNganh))];
+    const uniquePairs = this.resolveProgramCohortPairs(programLinks, filter);
 
-    if (maSoNganhs.length === 0) {
+    if (uniquePairs.length === 0) {
       return [];
     }
 
-    const plos = await this.prisma.pLO.findMany({
+    return this.prisma.pLO.findMany({
       where: {
-        maSoNganh: { in: maSoNganhs },
+        OR: uniquePairs.map((p) => ({ maSoNganh: p.maSoNganh, khoa: p.khoa })),
       },
       orderBy: [{ code: "asc" }, { maPLO: "asc" }],
       select: {
         maPLO: true,
         maSoNganh: true,
+        khoa: true,
         code: true,
         noiDungChuanDauRa: true,
       },
     });
-
-    return plos;
-  }
-
-  async getCloPloMappingMatrix(maHocPhan: string) {
-    await this.assertHocPhanExists(maHocPhan);
-
-    const [clos, programLinks] = await Promise.all([
-      this.prisma.cLO.findMany({
-        where: { maHocPhan },
-        orderBy: [{ code: "asc" }, { maCLO: "asc" }],
-        select: {
-          maCLO: true,
-          maHocPhan: true,
-          code: true,
-          noiDungChuanDauRa: true,
-        },
-      }),
-      this.prisma.chuongTrinhDaoTaoHocPhan.findMany({
-        where: { maHocPhan },
-        select: { maSoNganh: true },
-      }),
-    ]);
-
-    const maSoNganhs = [...new Set(programLinks.map((x) => x.maSoNganh))];
-
-    const plos =
-      maSoNganhs.length === 0
-        ? []
-        : await this.prisma.pLO.findMany({
-          where: {
-            maSoNganh: { in: maSoNganhs },
-          },
-          orderBy: [{ code: "asc" }, { maPLO: "asc" }],
-          select: {
-            maPLO: true,
-            maSoNganh: true,
-            code: true,
-            noiDungChuanDauRa: true,
-          },
-        });
-
-    const maCLOs = clos.map((x) => x.maCLO);
-
-    const mappings =
-      maCLOs.length === 0
-        ? []
-        : await this.prisma.cloPloMapping.findMany({
-          where: {
-            maCLO: { in: maCLOs },
-          },
-          orderBy: [{ maCLO: "asc" }, { maPLO: "asc" }],
-          select: {
-            maCLO: true,
-            maPLO: true,
-            trongSo: true,
-            ghiChu: true,
-          },
-        });
-
-    return {
-      clos,
-      plos,
-      mappings,
-    };
-  }
-
-  async getCloCoMappingMatrix(maHocPhan: string) {
-    await this.assertHocPhanExists(maHocPhan);
-
-    const [clos, cos] = await Promise.all([
-      this.prisma.cLO.findMany({
-        where: { maHocPhan },
-        orderBy: [{ code: "asc" }, { maCLO: "asc" }],
-        select: {
-          maCLO: true,
-          maHocPhan: true,
-          code: true,
-          noiDungChuanDauRa: true,
-        },
-      }),
-      this.prisma.cO.findMany({
-        where: { maHocPhan },
-        orderBy: [{ code: "asc" }, { maCO: "asc" }],
-        select: {
-          maCO: true,
-          maHocPhan: true,
-          code: true,
-          noiDungChuanDauRa: true,
-        },
-      }),
-    ]);
-
-    const maCLOs = clos.map((x) => x.maCLO);
-
-    const mappings =
-      maCLOs.length === 0
-        ? []
-        : await this.prisma.cloCoMapping.findMany({
-          where: {
-            maCLO: { in: maCLOs },
-          },
-          orderBy: [{ maCLO: "asc" }, { maCO: "asc" }],
-          select: {
-            maCLO: true,
-            maCO: true,
-            trongSo: true,
-            ghiChu: true,
-          },
-        });
-
-    return {
-      clos,
-      cos,
-      mappings,
-    };
-  }
-
-  async getCdgCoMappingMatrix(maHocPhan: string) {
-    await this.assertHocPhanExists(maHocPhan);
-
-    const [cdgs, cos] = await Promise.all([
-      this.prisma.cachDanhGia.findMany({
-        where: { maHocPhan },
-        orderBy: [{ tenThanhPhan: "asc" }, { maCDG: "asc" }],
-        select: {
-          maCDG: true,
-          maHocPhan: true,
-          tenThanhPhan: true,
-          cachDanhGia: true,
-          trongSo: true,
-          loai: true,
-        },
-      }),
-      this.prisma.cO.findMany({
-        where: { maHocPhan },
-        orderBy: [{ code: "asc" }, { maCO: "asc" }],
-        select: {
-          maCO: true,
-          maHocPhan: true,
-          code: true,
-          noiDungChuanDauRa: true,
-        },
-      }),
-    ]);
-
-    const maCDGs = cdgs.map((x) => x.maCDG);
-
-    const mappings =
-      maCDGs.length === 0
-        ? []
-        : await this.prisma.cdgCoMapping.findMany({
-          where: {
-            maCDG: { in: maCDGs },
-          },
-          orderBy: [{ maCDG: "asc" }, { maCO: "asc" }],
-          select: {
-            maCDG: true,
-            maCO: true,
-            trongSo: true,
-            ghiChu: true,
-          },
-        });
-
-    return {
-      cdgs,
-      cos,
-      mappings,
-    };
   }
 }

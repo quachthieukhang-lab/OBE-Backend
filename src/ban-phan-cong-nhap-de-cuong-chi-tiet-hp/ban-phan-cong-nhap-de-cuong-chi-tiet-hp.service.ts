@@ -1,18 +1,18 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { CreateBanPhanCongNhapDeCuongChiTietHpDto } from './dto/create-ban-phan-cong-nhap-de-cuong-chi-tiet-hp.dto';
-import { UpdateBanPhanCongNhapDeCuongChiTietHpDto } from './dto/update-ban-phan-cong-nhap-de-cuong-chi-tiet-hp.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { CreateBanPhanCongNhapDeCuongChiTietHpDto } from "./dto/create-ban-phan-cong-nhap-de-cuong-chi-tiet-hp.dto";
+import { UpdateBanPhanCongNhapDeCuongChiTietHpDto } from "./dto/update-ban-phan-cong-nhap-de-cuong-chi-tiet-hp.dto";
+import { PrismaService } from "src/prisma/prisma.service";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class BanPhanCongNhapDeCuongChiTietHpService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
-  private async assertRefs(dto: { maSoNganh: string; maHocPhan: string; MSGV: string }) {
+  private async assertRefs(dto: { maSoNganh: string; khoa: number; maHocPhan: string; MSGV: string }) {
     const [ctdt, hp, gv] = await Promise.all([
-      this.prisma.chuongTrinhDaoTao.findUnique({
-        where: { maSoNganh: dto.maSoNganh },
-        select: { maSoNganh: true },
+      this.prisma.chuongTrinhDaoTaoNienKhoa.findUnique({
+        where: { maSoNganh_khoa: { maSoNganh: dto.maSoNganh, khoa: dto.khoa } },
+        select: { maSoNganh: true, khoa: true },
       }),
       this.prisma.hocPhan.findUnique({
         where: { maHocPhan: dto.maHocPhan },
@@ -24,14 +24,15 @@ export class BanPhanCongNhapDeCuongChiTietHpService {
       }),
     ]);
 
-    if (!ctdt) throw new BadRequestException("ChuongTrinhDaoTao not found");
+    if (!ctdt) throw new BadRequestException("ChuongTrinhDaoTaoNienKhoa not found for (maSoNganh, khoa)");
     if (!hp) throw new BadRequestException("HocPhan not found");
     if (!gv) throw new BadRequestException("GiangVien not found");
   }
+
   async create(dto: CreateBanPhanCongNhapDeCuongChiTietHpDto) {
     await this.assertRefs(dto);
     try {
-      const { deadline, assignedAt, ...rest } = dto
+      const { deadline, assignedAt, ...rest } = dto;
       return await this.prisma.banPhanCongNhapDeCuongChiTietHP.create({
         data: {
           ...rest,
@@ -39,12 +40,12 @@ export class BanPhanCongNhapDeCuongChiTietHpService {
           assignedAt: dto.assignedAt ? new Date(dto.assignedAt) : new Date(),
         },
         include: {
-          chuongTrinh: true,
+          ctdtNienKhoa: { include: { chuongTrinh: true, nienKhoa: true } },
           hocPhan: true,
           giangVien: true,
         },
       });
-    } catch (e: any) {
+    } catch (e: unknown) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === "P2003") throw new BadRequestException("Foreign key constraint failed");
       }
@@ -56,7 +57,7 @@ export class BanPhanCongNhapDeCuongChiTietHpService {
     return this.prisma.banPhanCongNhapDeCuongChiTietHP.findMany({
       orderBy: { assignedAt: "desc" },
       include: {
-        chuongTrinh: true,
+        ctdtNienKhoa: { include: { chuongTrinh: true, nienKhoa: true } },
         hocPhan: true,
         giangVien: true,
       },
@@ -67,7 +68,7 @@ export class BanPhanCongNhapDeCuongChiTietHpService {
     const item = await this.prisma.banPhanCongNhapDeCuongChiTietHP.findUnique({
       where: { maBanPhanCong },
       include: {
-        chuongTrinh: true,
+        ctdtNienKhoa: { include: { chuongTrinh: true, nienKhoa: true } },
         hocPhan: true,
         giangVien: true,
       },
@@ -77,15 +78,16 @@ export class BanPhanCongNhapDeCuongChiTietHpService {
   }
 
   async update(maBanPhanCong: string, dto: UpdateBanPhanCongNhapDeCuongChiTietHpDto) {
-    await this.findOne(maBanPhanCong);
-    if (dto.maSoNganh || dto.maHocPhan || dto.MSGV) {
+    const current = await this.findOne(maBanPhanCong);
+    if (dto.maSoNganh != null || dto.khoa != null || dto.maHocPhan != null || dto.MSGV != null) {
       await this.assertRefs({
-        maSoNganh: dto.maSoNganh ?? (await this.findOne(maBanPhanCong)).maSoNganh,
-        maHocPhan: dto.maHocPhan ?? (await this.findOne(maBanPhanCong)).maHocPhan,
-        MSGV: dto.MSGV ?? (await this.findOne(maBanPhanCong)).MSGV,
+        maSoNganh: dto.maSoNganh ?? current.maSoNganh,
+        khoa: dto.khoa ?? current.khoa,
+        maHocPhan: dto.maHocPhan ?? current.maHocPhan,
+        MSGV: dto.MSGV ?? current.MSGV,
       });
     }
-    const { deadline, assignedAt, ...rest } = dto
+    const { deadline, assignedAt, ...rest } = dto;
     return this.prisma.banPhanCongNhapDeCuongChiTietHP.update({
       where: { maBanPhanCong },
       data: {
@@ -94,7 +96,7 @@ export class BanPhanCongNhapDeCuongChiTietHpService {
         assignedAt: dto.assignedAt ? new Date(dto.assignedAt) : undefined,
       },
       include: {
-        chuongTrinh: true,
+        ctdtNienKhoa: { include: { chuongTrinh: true, nienKhoa: true } },
         hocPhan: true,
         giangVien: true,
       },

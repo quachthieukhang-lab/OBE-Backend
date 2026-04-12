@@ -5,36 +5,36 @@ import { CreateCloDto } from "./dto/create-clo.dto";
 import { UpdateCloDto } from "./dto/update-clo.dto";
 
 @ApiTags("clo")
-@Controller("hoc-phan/:maHocPhan/clo")
+@Controller("de-cuong-chi-tiet/:maDeCuong/clo")
 export class CloController {
   constructor(private readonly service: CloService) {}
 
   @Post()
-  create(@Param("maHocPhan") maHocPhan: string, @Body() dto: CreateCloDto) {
-    return this.service.create(maHocPhan, dto);
+  create(@Param("maDeCuong") maDeCuong: string, @Body() dto: CreateCloDto) {
+    return this.service.create(maDeCuong, dto);
   }
 
   @Get()
-  findAll(@Param("maHocPhan") maHocPhan: string) {
-    return this.service.findAll(maHocPhan);
+  findAll(@Param("maDeCuong") maDeCuong: string) {
+    return this.service.findAll(maDeCuong);
   }
 
   @Get(":maCLO")
-  findOne(@Param("maHocPhan") maHocPhan: string, @Param("maCLO") maCLO: string) {
-    return this.service.findOne(maHocPhan, maCLO);
+  findOne(@Param("maDeCuong") maDeCuong: string, @Param("maCLO") maCLO: string) {
+    return this.service.findOne(maDeCuong, maCLO);
   }
 
   @Patch(":maCLO")
   update(
-    @Param("maHocPhan") maHocPhan: string,
+    @Param("maDeCuong") maDeCuong: string,
     @Param("maCLO") maCLO: string,
     @Body() dto: UpdateCloDto
   ) {
-    return this.service.update(maHocPhan, maCLO, dto);
+    return this.service.update(maDeCuong, maCLO, dto);
   }
 
   @Delete(":maCLO")
-  remove(@Param("maHocPhan") maHocPhan: string, @Param("maCLO") maCLO: string) {
-    return this.service.remove(maHocPhan, maCLO);
+  remove(@Param("maDeCuong") maDeCuong: string, @Param("maCLO") maCLO: string) {
+    return this.service.remove(maDeCuong, maCLO);
   }
 }

@@ -5,36 +5,36 @@ import { CreateCachDanhGiaDto } from "./dto/create-cach-danh-gia.dto";
 import { UpdateCachDanhGiaDto } from "./dto/update-cach-danh-gia.dto";
 
 @ApiTags("cach-danh-gia")
-@Controller("hoc-phan/:maHocPhan/cach-danh-gia")
+@Controller("de-cuong-chi-tiet/:maDeCuong/cach-danh-gia")
 export class CachDanhGiaController {
   constructor(private readonly service: CachDanhGiaService) {}
 
   @Post()
-  create(@Param("maHocPhan") maHocPhan: string, @Body() dto: CreateCachDanhGiaDto) {
-    return this.service.create(maHocPhan, dto);
+  create(@Param("maDeCuong") maDeCuong: string, @Body() dto: CreateCachDanhGiaDto) {
+    return this.service.create(maDeCuong, dto);
   }
 
   @Get()
-  findAll(@Param("maHocPhan") maHocPhan: string) {
-    return this.service.findAll(maHocPhan);
+  findAll(@Param("maDeCuong") maDeCuong: string) {
+    return this.service.findAll(maDeCuong);
   }
 
   @Get(":maCDG")
-  findOne(@Param("maHocPhan") maHocPhan: string, @Param("maCDG") maCDG: string) {
-    return this.service.findOne(maHocPhan, maCDG);
+  findOne(@Param("maDeCuong") maDeCuong: string, @Param("maCDG") maCDG: string) {
+    return this.service.findOne(maDeCuong, maCDG);
   }
 
   @Patch(":maCDG")
   update(
-    @Param("maHocPhan") maHocPhan: string,
+    @Param("maDeCuong") maDeCuong: string,
     @Param("maCDG") maCDG: string,
     @Body() dto: UpdateCachDanhGiaDto
   ) {
-    return this.service.update(maHocPhan, maCDG, dto);
+    return this.service.update(maDeCuong, maCDG, dto);
   }
 
   @Delete(":maCDG")
-  remove(@Param("maHocPhan") maHocPhan: string, @Param("maCDG") maCDG: string) {
-    return this.service.remove(maHocPhan, maCDG);
+  remove(@Param("maDeCuong") maDeCuong: string, @Param("maCDG") maCDG: string) {
+    return this.service.remove(maDeCuong, maCDG);
   }
 }

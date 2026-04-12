@@ -1,10 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsDateString, IsOptional, IsString } from "class-validator";
+import { IsDateString, IsInt, IsOptional, IsString } from "class-validator";
 
 export class CreateBanPhanCongNhapDeCuongChiTietHpDto {
   @ApiProperty({ example: "7480201", description: "Mã số ngành (FK)" })
   @IsString()
-  maSoNganh!: string; 
+  maSoNganh!: string;
+
+  @ApiProperty({ example: 48, description: "Khóa / niên khóa (FK tới ChuongTrinhDaoTaoNienKhoa)" })
+  @IsInt()
+  khoa!: number;
 
   @ApiProperty({ example: "CT101", description: "Mã học phần (FK)" })
   @IsString()

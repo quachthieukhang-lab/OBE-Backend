@@ -43,7 +43,12 @@ export class ChuongTrinhDaoTaoNienKhoaService {
           moTa: dto.moTa,
           trangThai: dto.trangThai,
         },
-        include: { nienKhoa: true, chuongTrinh: true },
+        include: {
+          nienKhoa: true,
+          chuongTrinh: true,
+          chuongTrinhHocPhans: { include: { hocPhan: true } },
+          plos: true,
+        },
       });
     } catch (e: any) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
@@ -58,14 +63,24 @@ export class ChuongTrinhDaoTaoNienKhoaService {
     return this.prisma.chuongTrinhDaoTaoNienKhoa.findMany({
       where: { maSoNganh },
       orderBy: { khoa: "asc" },
-      include: { chuongTrinh: true, nienKhoa: true },
+      include: {
+        chuongTrinh: true,
+        nienKhoa: true,
+        chuongTrinhHocPhans: { include: { hocPhan: true } },
+        plos: true,
+      },
     });
   }
 
   async findOne(maSoNganh: string, khoa: number) {
     const item = await this.prisma.chuongTrinhDaoTaoNienKhoa.findUnique({
       where: this.key(maSoNganh, khoa),
-      include: { nienKhoa: true, chuongTrinh: true },
+      include: {
+        nienKhoa: true,
+        chuongTrinh: true,
+        chuongTrinhHocPhans: { include: { hocPhan: true } },
+        plos: true,
+      },
     });
     if (!item) throw new NotFoundException("không tìm thấy CTDT-NienKhoa");
     return item;
@@ -88,7 +103,12 @@ export class ChuongTrinhDaoTaoNienKhoaService {
         moTa: dto.moTa,
         trangThai: dto.trangThai,
       },
-      include: { nienKhoa: true, chuongTrinh: true },
+      include: {
+        nienKhoa: true,
+        chuongTrinh: true,
+        chuongTrinhHocPhans: { include: { hocPhan: true } },
+        plos: true,
+      },
     });
   }
 

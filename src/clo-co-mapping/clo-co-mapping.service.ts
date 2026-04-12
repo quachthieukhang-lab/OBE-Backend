@@ -8,30 +8,29 @@ import { UpdateCloCoMappingDto } from "./dto/update-clo-co-mapping.dto";
 export class CloCoMappingService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Prisma compound key name thường theo pattern: maCLO_maCO
   private key(maCLO: string, maCO: string) {
     return { maCLO_maCO: { maCLO, maCO } } as const;
   }
 
-  private async assertCloExistsInCourse(maHocPhan: string, maCLO: string) {
+  private async assertCloExistsInDeCuong(maDeCuong: string, maCLO: string) {
     const clo = await this.prisma.cLO.findFirst({
-      where: { maHocPhan, maCLO },
+      where: { maDeCuong, maCLO },
       select: { maCLO: true },
     });
-    if (!clo) throw new BadRequestException("CLO not found in this HocPhan");
+    if (!clo) throw new BadRequestException("CLO not found in this DeCuong");
   }
 
-  private async assertCoExistsInCourse(maHocPhan: string, maCO: string) {
+  private async assertCoExistsInDeCuong(maDeCuong: string, maCO: string) {
     const co = await this.prisma.cO.findFirst({
-      where: { maHocPhan, maCO },
+      where: { maDeCuong, maCO },
       select: { maCO: true },
     });
-    if (!co) throw new BadRequestException("CO not found in this HocPhan");
+    if (!co) throw new BadRequestException("CO not found in this DeCuong");
   }
 
-  async create(maHocPhan: string, maCLO: string, dto: CreateCloCoMappingDto) {
-    await this.assertCloExistsInCourse(maHocPhan, maCLO);
-    await this.assertCoExistsInCourse(maHocPhan, dto.maCO);
+  async create(maDeCuong: string, maCLO: string, dto: CreateCloCoMappingDto) {
+    await this.assertCloExistsInDeCuong(maDeCuong, maCLO);
+    await this.assertCoExistsInDeCuong(maDeCuong, dto.maCO);
 
     try {
       return await this.prisma.cloCoMapping.create({
@@ -52,8 +51,8 @@ export class CloCoMappingService {
     }
   }
 
-  async findAll(maHocPhan: string, maCLO: string) {
-    await this.assertCloExistsInCourse(maHocPhan, maCLO);
+  async findAll(maDeCuong: string, maCLO: string) {
+    await this.assertCloExistsInDeCuong(maDeCuong, maCLO);
 
     return this.prisma.cloCoMapping.findMany({
       where: { maCLO },
@@ -62,8 +61,8 @@ export class CloCoMappingService {
     });
   }
 
-  async findOne(maHocPhan: string, maCLO: string, maCO: string) {
-    await this.assertCloExistsInCourse(maHocPhan, maCLO);
+  async findOne(maDeCuong: string, maCLO: string, maCO: string) {
+    await this.assertCloExistsInDeCuong(maDeCuong, maCLO);
 
     const item = await this.prisma.cloCoMapping.findUnique({
       where: this.key(maCLO, maCO),
@@ -73,10 +72,9 @@ export class CloCoMappingService {
     return item;
   }
 
-  async update(maHocPhan: string, maCLO: string, maCO: string, dto: UpdateCloCoMappingDto) {
-    await this.findOne(maHocPhan, maCLO, maCO);
+  async update(maDeCuong: string, maCLO: string, maCO: string, dto: UpdateCloCoMappingDto) {
+    await this.findOne(maDeCuong, maCLO, maCO);
 
-    // không update maCO vì thuộc PK; chỉ update trongSo/ghiChu
     return this.prisma.cloCoMapping.update({
       where: this.key(maCLO, maCO),
       data: {
@@ -87,8 +85,8 @@ export class CloCoMappingService {
     });
   }
 
-  async remove(maHocPhan: string, maCLO: string, maCO: string) {
-    await this.findOne(maHocPhan, maCLO, maCO);
+  async remove(maDeCuong: string, maCLO: string, maCO: string) {
+    await this.findOne(maDeCuong, maCLO, maCO);
 
     return this.prisma.cloCoMapping.delete({
       where: this.key(maCLO, maCO),

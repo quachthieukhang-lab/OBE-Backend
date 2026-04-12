@@ -50,7 +50,7 @@ export class CauHinhObeService {
     } catch (e: any) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === "P2002") {
-          throw new BadRequestException("CauHinhOBE for this khoa already exists");
+          throw new BadRequestException("CauHinhOBE for this (khoa, maDonVi) already exists");
         }
         if (e.code === "P2003") {
           throw new BadRequestException("Foreign key constraint failed");
@@ -122,7 +122,7 @@ export class CauHinhObeService {
     } catch (e: any) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
         if (e.code === "P2002") {
-          throw new BadRequestException("CauHinhOBE for this khoa already exists");
+          throw new BadRequestException("CauHinhOBE for this (khoa, maDonVi) already exists");
         }
         if (e.code === "P2003") {
           throw new BadRequestException("Foreign key constraint failed");
@@ -140,9 +140,9 @@ export class CauHinhObeService {
     });
   }
 
-  async findByKhoa(khoa: number) {
+  async findByKhoaAndDonVi(khoa: number, maDonVi: string) {
     const item = await this.prisma.cauHinhOBE.findUnique({
-      where: { khoa },
+      where: { khoa_maDonVi: { khoa, maDonVi } },
       include: {
         nienKhoa: true,
         donVi: true,
@@ -150,7 +150,7 @@ export class CauHinhObeService {
     });
 
     if (!item) {
-      throw new NotFoundException(`CauHinhOBE not found for khoa=${khoa}`);
+      throw new NotFoundException(`CauHinhOBE not found for khoa=${khoa}, maDonVi=${maDonVi}`);
     }
 
     return item;

@@ -59,4 +59,9 @@ export class CreateLopHocPhanDto {
     @IsOptional()
     @IsString()
     status?: string;
+
+    @ApiPropertyOptional({ example: "uuid-de-cuong", description: "Mã đề cương chi tiết (FK, tùy chọn)" })
+    @IsOptional()
+    @IsString()
+    maDeCuong?: string;
 }

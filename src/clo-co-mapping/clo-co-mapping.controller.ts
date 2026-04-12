@@ -5,49 +5,49 @@ import { CreateCloCoMappingDto } from "./dto/create-clo-co-mapping.dto";
 import { UpdateCloCoMappingDto } from "./dto/update-clo-co-mapping.dto";
 
 @ApiTags("clo-co-mapping")
-@Controller("hoc-phan/:maHocPhan/clo/:maCLO/co-mapping")
+@Controller("de-cuong-chi-tiet/:maDeCuong/clo/:maCLO/co-mapping")
 export class CloCoMappingController {
   constructor(private readonly service: CloCoMappingService) {}
 
   @Post()
   create(
-    @Param("maHocPhan") maHocPhan: string,
+    @Param("maDeCuong") maDeCuong: string,
     @Param("maCLO") maCLO: string,
-    @Body() dto: CreateCloCoMappingDto
+    @Body() dto: CreateCloCoMappingDto,
   ) {
-    return this.service.create(maHocPhan, maCLO, dto);
+    return this.service.create(maDeCuong, maCLO, dto);
   }
 
   @Get()
-  findAll(@Param("maHocPhan") maHocPhan: string, @Param("maCLO") maCLO: string) {
-    return this.service.findAll(maHocPhan, maCLO);
+  findAll(@Param("maDeCuong") maDeCuong: string, @Param("maCLO") maCLO: string) {
+    return this.service.findAll(maDeCuong, maCLO);
   }
 
   @Get(":maCO")
   findOne(
-    @Param("maHocPhan") maHocPhan: string,
+    @Param("maDeCuong") maDeCuong: string,
     @Param("maCLO") maCLO: string,
-    @Param("maCO") maCO: string
+    @Param("maCO") maCO: string,
   ) {
-    return this.service.findOne(maHocPhan, maCLO, maCO);
+    return this.service.findOne(maDeCuong, maCLO, maCO);
   }
 
   @Patch(":maCO")
   update(
-    @Param("maHocPhan") maHocPhan: string,
+    @Param("maDeCuong") maDeCuong: string,
     @Param("maCLO") maCLO: string,
     @Param("maCO") maCO: string,
-    @Body() dto: UpdateCloCoMappingDto
+    @Body() dto: UpdateCloCoMappingDto,
   ) {
-    return this.service.update(maHocPhan, maCLO, maCO, dto);
+    return this.service.update(maDeCuong, maCLO, maCO, dto);
   }
 
   @Delete(":maCO")
   remove(
-    @Param("maHocPhan") maHocPhan: string,
-    @Param("maCLO") maClo: string,
-    @Param("maCO") maCO: string
+    @Param("maDeCuong") maDeCuong: string,
+    @Param("maCLO") maCLO: string,
+    @Param("maCO") maCO: string,
   ) {
-    return this.service.remove(maHocPhan, maClo, maCO);
+    return this.service.remove(maDeCuong, maCLO, maCO);
   }
 }

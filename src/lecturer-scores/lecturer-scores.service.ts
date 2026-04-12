@@ -25,6 +25,12 @@ export class LecturerScoresService {
             tenHocPhan: true,
           },
         },
+        deCuong: {
+          select: {
+            maDeCuong: true,
+            phienBan: true,
+          },
+        },
       },
     });
 
@@ -110,8 +116,12 @@ export class LecturerScoresService {
   async listMyClassCachDanhGia(MSGV: string, maLopHocPhan: string) {
     const lop = await this.getMyClassOrThrow(MSGV, maLopHocPhan);
 
+    if (!lop.deCuong) {
+      return [];
+    }
+
     return this.prisma.cachDanhGia.findMany({
-      where: { maHocPhan: lop.maHocPhan },
+      where: { maDeCuong: lop.deCuong.maDeCuong },
       orderBy: [{ tenThanhPhan: "asc" }, { maCDG: "asc" }],
     });
   }

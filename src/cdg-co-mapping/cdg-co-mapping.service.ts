@@ -8,30 +8,29 @@ import { UpdateCdgCoMappingDto } from "./dto/update-cdg-co-mapping.dto";
 export class CdgCoMappingService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // Prisma compound key name thường theo pattern: maCDG_maCO
   private key(maCDG: string, maCO: string) {
     return { maCDG_maCO: { maCDG, maCO } } as const;
   }
 
-  private async assertCdgExistsInCourse(maHocPhan: string, maCDG: string) {
+  private async assertCdgExistsInDeCuong(maDeCuong: string, maCDG: string) {
     const cdg = await this.prisma.cachDanhGia.findFirst({
-      where: { maHocPhan, maCDG },
+      where: { maDeCuong, maCDG },
       select: { maCDG: true },
     });
-    if (!cdg) throw new BadRequestException("CachDanhGia not found in this HocPhan");
+    if (!cdg) throw new BadRequestException("CachDanhGia not found in this DeCuong");
   }
 
-  private async assertCoExistsInCourse(maHocPhan: string, maCO: string) {
+  private async assertCoExistsInDeCuong(maDeCuong: string, maCO: string) {
     const co = await this.prisma.cO.findFirst({
-      where: { maHocPhan, maCO },
+      where: { maDeCuong, maCO },
       select: { maCO: true },
     });
-    if (!co) throw new BadRequestException("CO not found in this HocPhan");
+    if (!co) throw new BadRequestException("CO not found in this DeCuong");
   }
 
-  async create(maHocPhan: string, maCDG: string, dto: CreateCdgCoMappingDto) {
-    await this.assertCdgExistsInCourse(maHocPhan, maCDG);
-    await this.assertCoExistsInCourse(maHocPhan, dto.maCO);
+  async create(maDeCuong: string, maCDG: string, dto: CreateCdgCoMappingDto) {
+    await this.assertCdgExistsInDeCuong(maDeCuong, maCDG);
+    await this.assertCoExistsInDeCuong(maDeCuong, dto.maCO);
 
     try {
       return await this.prisma.cdgCoMapping.create({
@@ -52,8 +51,8 @@ export class CdgCoMappingService {
     }
   }
 
-  async findAll(maHocPhan: string, maCDG: string) {
-    await this.assertCdgExistsInCourse(maHocPhan, maCDG);
+  async findAll(maDeCuong: string, maCDG: string) {
+    await this.assertCdgExistsInDeCuong(maDeCuong, maCDG);
 
     return this.prisma.cdgCoMapping.findMany({
       where: { maCDG },
@@ -62,8 +61,8 @@ export class CdgCoMappingService {
     });
   }
 
-  async findOne(maHocPhan: string, maCDG: string, maCO: string) {
-    await this.assertCdgExistsInCourse(maHocPhan, maCDG);
+  async findOne(maDeCuong: string, maCDG: string, maCO: string) {
+    await this.assertCdgExistsInDeCuong(maDeCuong, maCDG);
 
     const item = await this.prisma.cdgCoMapping.findUnique({
       where: this.key(maCDG, maCO),
@@ -73,15 +72,9 @@ export class CdgCoMappingService {
     return item;
   }
 
-  async update(
-    maHocPhan: string,
-    maCDG: string,
-    maCO: string,
-    dto: UpdateCdgCoMappingDto
-  ) {
-    await this.findOne(maHocPhan, maCDG, maCO);
+  async update(maDeCuong: string, maCDG: string, maCO: string, dto: UpdateCdgCoMappingDto) {
+    await this.findOne(maDeCuong, maCDG, maCO);
 
-    // không update maCO vì thuộc PK; chỉ update trongSo/ghiChu
     return this.prisma.cdgCoMapping.update({
       where: this.key(maCDG, maCO),
       data: {
@@ -92,8 +85,8 @@ export class CdgCoMappingService {
     });
   }
 
-  async remove(maHocPhan: string, maCDG: string, maCO: string) {
-    await this.findOne(maHocPhan, maCDG, maCO);
+  async remove(maDeCuong: string, maCDG: string, maCO: string) {
+    await this.findOne(maDeCuong, maCDG, maCO);
 
     return this.prisma.cdgCoMapping.delete({
       where: this.key(maCDG, maCO),

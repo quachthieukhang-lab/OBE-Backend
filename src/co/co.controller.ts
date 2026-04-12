@@ -5,36 +5,36 @@ import { CreateCoDto } from "./dto/create-co.dto";
 import { UpdateCoDto } from "./dto/update-co.dto";
 
 @ApiTags("co")
-@Controller("hoc-phan/:maHocPhan/co")
+@Controller("de-cuong-chi-tiet/:maDeCuong/co")
 export class CoController {
   constructor(private readonly service: CoService) {}
 
   @Post()
-  create(@Param("maHocPhan") maHocPhan: string, @Body() dto: CreateCoDto) {
-    return this.service.create(maHocPhan, dto);
+  create(@Param("maDeCuong") maDeCuong: string, @Body() dto: CreateCoDto) {
+    return this.service.create(maDeCuong, dto);
   }
 
   @Get()
-  findAll(@Param("maHocPhan") maHocPhan: string) {
-    return this.service.findAll(maHocPhan);
+  findAll(@Param("maDeCuong") maDeCuong: string) {
+    return this.service.findAll(maDeCuong);
   }
 
   @Get(":maCO")
-  findOne(@Param("maHocPhan") maHocPhan: string, @Param("maCO") maCO: string) {
-    return this.service.findOne(maHocPhan, maCO);
+  findOne(@Param("maDeCuong") maDeCuong: string, @Param("maCO") maCO: string) {
+    return this.service.findOne(maDeCuong, maCO);
   }
 
   @Patch(":maCO")
   update(
-    @Param("maHocPhan") maHocPhan: string,
+    @Param("maDeCuong") maDeCuong: string,
     @Param("maCO") maCO: string,
     @Body() dto: UpdateCoDto
   ) {
-    return this.service.update(maHocPhan, maCO, dto);
+    return this.service.update(maDeCuong, maCO, dto);
   }
 
   @Delete(":maCO")
-  remove(@Param("maHocPhan") maHocPhan: string, @Param("maCO") maCO: string) {
-    return this.service.remove(maHocPhan, maCO);
+  remove(@Param("maDeCuong") maDeCuong: string, @Param("maCO") maCO: string) {
+    return this.service.remove(maDeCuong, maCO);
   }
 }

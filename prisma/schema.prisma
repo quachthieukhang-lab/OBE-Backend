@@ -50,7 +50,8 @@ model NienKhoa {
   chuongTrinhNienKhoas ChuongTrinhDaoTaoNienKhoa[]
   lopHocPhans          LopHocPhan[]
   sinhViens            SinhVien[]
-  cauHinhOBE           CauHinhOBE?
+  cauHinhOBEs          CauHinhOBE[]
+
   @@map("nien_khoa")
 }
 
@@ -68,10 +69,7 @@ model ChuongTrinhDaoTao {
   donVi DonVi @relation(fields: [maDonVi], references: [maDonVi])
 
   chuongTrinhNienKhoas ChuongTrinhDaoTaoNienKhoa[]
-  chuongTrinhHocPhans  ChuongTrinhDaoTaoHocPhan[]
-  plos                 PLO[]
   sinhViens            SinhVien[]
-  banPhanCongs         BanPhanCongNhapDeCuongChiTietHP[]
 
   @@map("chuong_trinh_dao_tao")
 }
@@ -90,8 +88,11 @@ model ChuongTrinhDaoTaoNienKhoa {
   moTa             String?   @map("mo_ta")
   trangThai        String    @default("active") @map("trang_thai")
 
-  chuongTrinh ChuongTrinhDaoTao @relation(fields: [maSoNganh], references: [maSoNganh])
-  nienKhoa    NienKhoa          @relation(fields: [khoa], references: [khoa])
+  chuongTrinh          ChuongTrinhDaoTao           @relation(fields: [maSoNganh], references: [maSoNganh])
+  nienKhoa             NienKhoa                    @relation(fields: [khoa], references: [khoa])
+  chuongTrinhHocPhans  ChuongTrinhDaoTaoHocPhan[]
+  plos                 PLO[]
+  banPhanCongs         BanPhanCongNhapDeCuongChiTietHP[]
 
   @@id([maSoNganh, khoa])
   @@map("chuong_trinh_dao_tao_nien_khoa")
@@ -112,17 +113,36 @@ model HocPhan {
   donVi DonVi @relation(fields: [maDonVi], references: [maDonVi])
 
   chuongTrinhHocPhans ChuongTrinhDaoTaoHocPhan[]
-  clos                CLO[]
-  cos                 CO[]
-  cachDanhGias        CachDanhGia[]
+  deCuongs            DeCuongChiTiet[]
   lopHocPhans         LopHocPhan[]
   banPhanCongs        BanPhanCongNhapDeCuongChiTietHP[]
 
   @@map("hoc_phan")
 }
 
+model DeCuongChiTiet {
+  maDeCuong  String    @id @default(uuid()) @map("ma_de_cuong")
+  maHocPhan  String    @map("ma_hoc_phan")
+  phienBan   String    @map("phien_ban")
+  ngayApDung DateTime? @map("ngay_ap_dung") @db.Date
+  trangThai  String    @default("draft") @map("trang_thai")
+  ghiChu     String?   @map("ghi_chu")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  hocPhan      HocPhan       @relation(fields: [maHocPhan], references: [maHocPhan])
+  clos         CLO[]
+  cos          CO[]
+  cachDanhGias CachDanhGia[]
+  lopHocPhans  LopHocPhan[]
+
+  @@unique([maHocPhan, phienBan])
+  @@map("de_cuong_chi_tiet")
+}
+
 model ChuongTrinhDaoTaoHocPhan {
   maSoNganh    String  @map("ma_so_nganh")
+  khoa         Int     @map("khoa")
   maHocPhan    String  @map("ma_hoc_phan")
   hocKyDuKien  Int?    @map("hoc_ky_du_kien")
   namHocDuKien Int?    @map("nam_hoc_du_kien")
@@ -130,16 +150,17 @@ model ChuongTrinhDaoTaoHocPhan {
   nhomTuChon   String? @map("nhom_tu_chon")
   ghiChu       String? @map("ghi_chu")
 
-  chuongTrinh ChuongTrinhDaoTao @relation(fields: [maSoNganh], references: [maSoNganh])
-  hocPhan     HocPhan           @relation(fields: [maHocPhan], references: [maHocPhan])
+  ctdtNienKhoa ChuongTrinhDaoTaoNienKhoa @relation(fields: [maSoNganh, khoa], references: [maSoNganh, khoa])
+  hocPhan      HocPhan                   @relation(fields: [maHocPhan], references: [maHocPhan])
 
-  @@id([maSoNganh, maHocPhan])
+  @@id([maSoNganh, khoa, maHocPhan])
   @@map("chuong_trinh_dao_tao_hoc_phan")
 }
 
 model PLO {
   maPLO             String  @id @default(uuid()) @map("ma_plo")
   maSoNganh         String  @map("ma_so_nganh")
+  khoa              Int     @map("khoa")
   noiDungChuanDauRa String  @map("noi_dung_chuan_dau_ra")
   code              String? @map("code")
   nhom              String? @map("nhom")
@@ -147,7 +168,7 @@ model PLO {
   ghiChu            String? @map("ghi_chu")
   isActive          Boolean @default(true) @map("is_active")
 
-  chuongTrinh    ChuongTrinhDaoTao @relation(fields: [maSoNganh], references: [maSoNganh])
+  ctdtNienKhoa   ChuongTrinhDaoTaoNienKhoa @relation(fields: [maSoNganh, khoa], references: [maSoNganh, khoa])
   cloPloMappings CloPloMapping[]
   ketQuaPLOs     KetQuaPLO[]
 
@@ -156,11 +177,11 @@ model PLO {
 
 model CLO {
   maCLO             String  @id @default(uuid()) @map("ma_clo")
-  maHocPhan         String  @map("ma_hoc_phan")
+  maDeCuong         String  @map("ma_de_cuong")
   noiDungChuanDauRa String  @map("noi_dung_chuan_dau_ra")
   code              String? @map("code")
 
-  hocPhan HocPhan @relation(fields: [maHocPhan], references: [maHocPhan])
+  deCuong DeCuongChiTiet @relation(fields: [maDeCuong], references: [maDeCuong])
 
   cloPloMappings CloPloMapping[]
   cloCoMappings  CloCoMapping[]
@@ -171,11 +192,11 @@ model CLO {
 
 model CO {
   maCO              String  @id @default(uuid()) @map("ma_co")
-  maHocPhan         String  @map("ma_hoc_phan")
+  maDeCuong         String  @map("ma_de_cuong")
   noiDungChuanDauRa String  @map("noi_dung_chuan_dau_ra")
   code              String? @map("code")
 
-  hocPhan HocPhan @relation(fields: [maHocPhan], references: [maHocPhan])
+  deCuong DeCuongChiTiet @relation(fields: [maDeCuong], references: [maDeCuong])
 
   cloCoMappings CloCoMapping[]
   cdgCoMappings CdgCoMapping[]
@@ -186,13 +207,13 @@ model CO {
 
 model CachDanhGia {
   maCDG        String  @id @default(uuid()) @map("ma_cdg")
-  maHocPhan    String  @map("ma_hoc_phan")
+  maDeCuong    String  @map("ma_de_cuong")
   cachDanhGia  String? @map("cach_danh_gia")
   trongSo      Decimal @map("trong_so") @db.Decimal(5, 4)
   tenThanhPhan String  @map("ten_thanh_phan")
   loai         String? @map("loai")
 
-  hocPhan HocPhan @relation(fields: [maHocPhan], references: [maHocPhan])
+  deCuong DeCuongChiTiet @relation(fields: [maDeCuong], references: [maDeCuong])
 
   cdgCoMappings CdgCoMapping[]
   diemSos       DiemSo[]
@@ -268,6 +289,7 @@ model LopHocPhan {
   maLopHocPhan String    @id @map("ma_lop_hoc_phan")
   MSGV         String    @map("msgv")
   maHocPhan    String    @map("ma_hoc_phan")
+  maDeCuong    String?   @map("ma_de_cuong")
   khoa         Int       @map("khoa")
   hocKy        Int       @map("hoc_ky")
   nhom         String?   @map("nhom")
@@ -278,9 +300,10 @@ model LopHocPhan {
   ngayKetThuc  DateTime? @map("ngay_ket_thuc") @db.Date
   status       String?   @map("status")
 
-  giangVien GiangVien @relation(fields: [MSGV], references: [MSGV])
-  hocPhan   HocPhan   @relation(fields: [maHocPhan], references: [maHocPhan])
-  nienKhoa  NienKhoa  @relation(fields: [khoa], references: [khoa])
+  giangVien GiangVien       @relation(fields: [MSGV], references: [MSGV])
+  hocPhan   HocPhan         @relation(fields: [maHocPhan], references: [maHocPhan])
+  deCuong   DeCuongChiTiet? @relation(fields: [maDeCuong], references: [maDeCuong])
+  nienKhoa  NienKhoa        @relation(fields: [khoa], references: [khoa])
 
   dangKyHocPhans DangKyHocPhan[]
   diemSos        DiemSo[]
@@ -359,6 +382,7 @@ model DiemSo {
 model BanPhanCongNhapDeCuongChiTietHP {
   maBanPhanCong String    @id @default(uuid()) @map("ma_ban_phan_cong")
   maSoNganh     String    @map("ma_so_nganh")
+  khoa          Int       @map("khoa")
   maHocPhan     String    @map("ma_hoc_phan")
   MSGV          String    @map("msgv")
   vaiTro        String    @map("vai_tro")
@@ -367,9 +391,9 @@ model BanPhanCongNhapDeCuongChiTietHP {
   ghiChu        String?   @map("ghi_chu")
   assignedAt    DateTime? @map("assigned_at")
 
-  chuongTrinh ChuongTrinhDaoTao @relation(fields: [maSoNganh], references: [maSoNganh])
-  hocPhan     HocPhan           @relation(fields: [maHocPhan], references: [maHocPhan])
-  giangVien   GiangVien         @relation(fields: [MSGV], references: [MSGV])
+  ctdtNienKhoa ChuongTrinhDaoTaoNienKhoa @relation(fields: [maSoNganh, khoa], references: [maSoNganh, khoa])
+  hocPhan      HocPhan                   @relation(fields: [maHocPhan], references: [maHocPhan])
+  giangVien    GiangVien                 @relation(fields: [MSGV], references: [MSGV])
 
   @@map("ban_phan_cong_nhap_de_cuong_chi_tiet_hp")
 }
@@ -425,16 +449,17 @@ model KetQuaPLO {
 
 model CauHinhOBE {
   id              String   @id @default(uuid()) @map("id")
-  khoa            Int      @unique @map("khoa")
+  khoa            Int      @map("khoa")
   maDonVi         String   @map("ma_don_vi")
   nguongDatCaNhan Decimal  @map("nguong_dat_ca_nhan") @db.Decimal(5, 4)
   kpiLopHoc       Decimal  @map("kpi_lop_hoc") @db.Decimal(5, 4)
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  nienKhoa        NienKhoa @relation(fields: [khoa], references: [khoa])
-  donVi           DonVi    @relation(fields: [maDonVi], references: [maDonVi])
+  nienKhoa NienKhoa @relation(fields: [khoa], references: [khoa])
+  donVi    DonVi    @relation(fields: [maDonVi], references: [maDonVi])
 
+  @@unique([khoa, maDonVi])
   @@map("cau_hinh_obe")
 }
 

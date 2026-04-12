@@ -8,67 +8,67 @@ import { UpdateCloDto } from "./dto/update-clo.dto";
 export class CloService {
   constructor(private readonly prisma: PrismaService) {}
 
-  private async assertHocPhanExists(maHocPhan: string) {
-    const hp = await this.prisma.hocPhan.findUnique({
-      where: { maHocPhan },
-      select: { maHocPhan: true },
+  private async assertDeCuongExists(maDeCuong: string) {
+    const dc = await this.prisma.deCuongChiTiet.findUnique({
+      where: { maDeCuong },
+      select: { maDeCuong: true },
     });
-    if (!hp) throw new BadRequestException("HocPhan not found");
+    if (!dc) throw new BadRequestException("DeCuongChiTiet not found");
   }
 
-  async create(maHocPhan: string, dto: CreateCloDto) {
-    await this.assertHocPhanExists(maHocPhan);
+  async create(maDeCuong: string, dto: CreateCloDto) {
+    await this.assertDeCuongExists(maDeCuong);
 
     try {
       return await this.prisma.cLO.create({
         data: {
-          maHocPhan,
+          maDeCuong,
           noiDungChuanDauRa: dto.noiDungChuanDauRa,
           code: dto.code,
         },
-        include: { hocPhan: true },
+        include: { deCuong: { include: { hocPhan: true } } },
       });
     } catch (e: any) {
       if (e instanceof Prisma.PrismaClientKnownRequestError) {
-        if (e.code === "P2003") throw new BadRequestException("Foreign key invalid (maHocPhan)");
+        if (e.code === "P2003") throw new BadRequestException("Foreign key invalid (maDeCuong)");
       }
       throw e;
     }
   }
 
-  async findAll(maHocPhan: string) {
-    await this.assertHocPhanExists(maHocPhan);
+  async findAll(maDeCuong: string) {
+    await this.assertDeCuongExists(maDeCuong);
 
     return this.prisma.cLO.findMany({
-      where: { maHocPhan },
+      where: { maDeCuong },
       orderBy: [{ code: "asc" }, { maCLO: "asc" }],
     });
   }
 
-  async findOne(maHocPhan: string, maCLO: string) {
+  async findOne(maDeCuong: string, maCLO: string) {
     const item = await this.prisma.cLO.findFirst({
-      where: { maHocPhan, maCLO },
-      include: { hocPhan: true },
+      where: { maDeCuong, maCLO },
+      include: { deCuong: { include: { hocPhan: true } } },
     });
     if (!item) throw new NotFoundException("CLO not found");
     return item;
   }
 
-  async update(maHocPhan: string, maCLO: string, dto: UpdateCloDto) {
-    await this.findOne(maHocPhan, maCLO);
+  async update(maDeCuong: string, maCLO: string, dto: UpdateCloDto) {
+    await this.findOne(maDeCuong, maCLO);
 
     return this.prisma.cLO.update({
-      where: { maCLO }, // update theo PK
+      where: { maCLO },
       data: {
         noiDungChuanDauRa: dto.noiDungChuanDauRa,
         code: dto.code,
       },
-      include: { hocPhan: true },
+      include: { deCuong: { include: { hocPhan: true } } },
     });
   }
 
-  async remove(maHocPhan: string, maCLO: string) {
-    await this.findOne(maHocPhan, maCLO);
+  async remove(maDeCuong: string, maCLO: string) {
+    await this.findOne(maDeCuong, maCLO);
 
     try {
       return await this.prisma.cLO.delete({ where: { maCLO } });
